@@ -1,6 +1,14 @@
 config MATCH_XIAOMI
 	tristate "Xiaomi Specific Patches on kernel"
 
+config TARGET_PRODUCT_SELENE
+	bool "Xiaomi Redmi 10 / selene product support"
+	depends on MATCH_XIAOMI
+	default n
+	help
+	  Enable Xiaomi selene/selenes/eos (K19A) specific hardware quirks
+	  for touchscreen and fingerprint drivers.
+
 config HQ_SYSFS_SUPPORT
 	tristate "Huaqin Sysfs Driver"
 	depends on MATCH_XIAOMI

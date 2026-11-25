@@ -5,6 +5,7 @@
  *
  */
 #include <linux/slab.h>
+#include <linux/module.h>
 #include "teei_fp.h"
 #include "teei_client_transfer_data.h"
 #include <imsg_log.h>
@@ -14,6 +15,7 @@ static struct TEEC_Context context;
 static int context_initialized;
 struct TEEC_UUID uuid_fp = { 0x7778c03f, 0xc30c, 0x4dd0,
 { 0xa3, 0x19, 0xea, 0x29, 0x64, 0x3d, 0x4d, 0x4b } };
+EXPORT_SYMBOL_GPL(uuid_fp);
 int send_fp_command(void *buffer, unsigned long size)
 {
 	int ret = 0;

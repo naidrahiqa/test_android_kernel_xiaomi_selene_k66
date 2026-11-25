@@ -54,6 +54,8 @@ obj-y += drivers/rpmsg/
 
 obj-y += drivers/input/keyboard/
 
+obj-$(CONFIG_MTK_FINGERPRINT_SUPPORT) += drivers/input/fingerprint/
+
 obj-y += drivers/phy/mediatek/
 
 obj-y += drivers/thermal/mediatek/
