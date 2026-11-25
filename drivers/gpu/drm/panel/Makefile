@@ -90,6 +90,7 @@ obj-$(CONFIG_DRM_PANEL_SERDES) += panel-serdes-max96789.o bridge-serdes-max96789
 obj-$(CONFIG_DRM_PANEL_NT37707_C2V_ARP) += panel-nt37707-c2v-arp.o
 obj-$(CONFIG_DRM_PANEL_NT51021H_WUXGA_VDO_BOE) += panel-nt51021h-wuxga-vdo-boe.o
 obj-$(CONFIG_DRM_PANEL_N11A_42_02_0A_DSC_VDO) += panel-n11a-42-02-0a-dsc-vdo.o
+obj-$(CONFIG_DRM_PANEL_K19A_36_02_0A_DSC_VDO) += ocp2131_bias.o
 obj-$(CONFIG_DRM_PANEL_K19A_36_02_0A_DSC_VDO) += panel-k19a-36-02-0a-dsc-vdo.o
 obj-$(CONFIG_DRM_PANEL_K19A_43_02_0B_DSC_VDO) += panel-k19a-43-02-0b-dsc-vdo.o
 obj-$(CONFIG_DRM_PANEL_K19A_36_03_0C_DSC_VDO) += panel-k19a-36-03-0c-dsc-vdo.o
