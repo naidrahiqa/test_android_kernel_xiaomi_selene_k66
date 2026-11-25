@@ -656,25 +656,26 @@ static int fusb303_auto_snk_en(struct fusb303_chip *chip,
 	return rc;
 }
 
-bool platform_get_device_irq_state(struct fusb303_chip *chip)
+static bool platform_get_device_irq_state(struct fusb303_chip *chip)
 {
-	struct device *cdev = &chip->client->dev;
+	struct device *cdev;
 	int rc = 0;
-
-	dev_info(cdev, "%s enter\n", __func__);
 
 	if (!chip) {
 		pr_err("%s Error: Chip structure is NULL!\n", __func__);
 		return false;
-	} else {
-		if (gpio_cansleep(chip->pdata->int_gpio)) {
-			rc = !gpio_get_value_cansleep(chip->pdata->int_gpio);
-		} else {
-			rc = !gpio_get_value(chip->pdata->int_gpio);
-		}
-		dev_info(cdev, "%s finish, state=%d\n", __func__, rc);
-		return (rc != 0);
 	}
+
+	cdev = &chip->client->dev;
+	dev_info(cdev, "%s enter\n", __func__);
+
+	if (gpio_cansleep(chip->pdata->int_gpio)) {
+		rc = !gpio_get_value_cansleep(chip->pdata->int_gpio);
+	} else {
+		rc = !gpio_get_value(chip->pdata->int_gpio);
+	}
+	dev_info(cdev, "%s finish, state=%d\n", __func__, rc);
+	return (rc != 0);
 }
 
 static int fusb303_enable(struct fusb303_chip *chip, bool enable)
@@ -1997,7 +1998,7 @@ static int fusb303_init_gpio(struct fusb303_chip *chip)
 				chip->irq_gpio);
 	}
 
-	ret = request_irq(chip->irq_gpio, fusb303_interrupt,
+	ret = devm_request_irq(cdev, chip->irq_gpio, fusb303_interrupt,
 				IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 				"fusb303_int_gpio", chip);
 	if (ret)
@@ -2012,7 +2013,7 @@ static int fusb303_init_gpio(struct fusb303_chip *chip)
 static void fusb303_free_gpio(struct fusb303_chip *chip)
 {
 	if (gpio_is_valid(chip->pdata->int_gpio))
-		gpio_free(chip->pdata->int_gpio);
+		devm_gpio_free(&chip->client->dev, chip->pdata->int_gpio);
 }
 static int fusb303_parse_dt(struct fusb303_chip *chip)
 {
@@ -2195,7 +2196,7 @@ static int dual_role_set_prop(struct dual_role_phy_instance *dual_role,
 	return 0;
 }
 #endif /* HAVE_DR */
-int fusb303_alert_status_clear(struct tcpc_device *tcpc,
+static int fusb303_alert_status_clear(struct tcpc_device *tcpc,
 		uint32_t mask)
 {
 		pr_info("%s enter \n", __func__);
@@ -2208,13 +2209,13 @@ static int fusb303_tcpc_init(struct tcpc_device *tcpc, bool sw_reset)
 	return 0;
 }
 
-int fusb303_fault_status_clear(struct tcpc_device *tcpc, uint8_t status)
+static int fusb303_fault_status_clear(struct tcpc_device *tcpc, uint8_t status)
 {
 		pr_info("%s enter \n", __func__);
 	return 0;
 }
 
-int fusb303_get_alert_mask(struct tcpc_device *tcpc, uint32_t *mask)
+static int fusb303_get_alert_mask(struct tcpc_device *tcpc, uint32_t *mask)
 {
 		pr_info("%s enter \n", __func__);
 	return 0;
@@ -2236,7 +2237,7 @@ static int fusb303_get_power_status(struct tcpc_device *tcpc)
 	return 0;
 }
 
-int fusb303_get_fault_status(struct tcpc_device *tcpc, uint8_t *status)
+static int fusb303_get_fault_status(struct tcpc_device *tcpc, uint8_t *status)
 {
 
 		pr_info("%s enter \n", __func__);
@@ -2273,7 +2274,7 @@ static int fusb303_tcpc_deinit(struct tcpc_device *tcpc_dev)
 	return 0;
 }
 
-int fusb303_set_role(struct tcpc_device *tcpc, int state)
+static __maybe_unused int fusb303_set_role(struct tcpc_device *tcpc, int state)
 {
 	int rc = 0;
 	u8 reg;

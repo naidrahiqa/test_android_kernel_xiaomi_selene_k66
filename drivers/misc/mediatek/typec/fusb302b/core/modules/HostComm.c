@@ -299,7 +299,7 @@ struct vdm_mode_buf
 /* Add more if needed */
 };
 
-FSC_U8 ReadVdmModes(struct Port *port, FSC_U8 *buf, FSC_U32 len)
+static FSC_U8 ReadVdmModes(struct Port *port, FSC_U8 *buf, FSC_U32 len)
 {
     struct vdm_mode_buf *vdm_obj = (struct vdm_mode_buf*) buf;
     /* Check if buffer has enough size */
@@ -321,7 +321,7 @@ FSC_U8 ReadVdmModes(struct Port *port, FSC_U8 *buf, FSC_U32 len)
     return sizeof(struct vdm_mode_buf);
 }
 
-void WriteVdmModes(struct Port *port, FSC_U8 *buf)
+static void WriteVdmModes(struct Port *port, FSC_U8 *buf)
 {
     struct vdm_mode_buf *vdm_obj = (struct vdm_mode_buf*) buf;
     if (vdm_obj->num_svid > 0)

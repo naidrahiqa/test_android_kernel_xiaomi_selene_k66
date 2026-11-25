@@ -1202,7 +1202,7 @@ FSC_S32 requestExitMode(struct Port *port, SopType sop, FSC_U16 svid,
 }
 
 /* call this function to send an attention command to specified SOP type */
-FSC_S32 sendAttention(SopType sop, FSC_U32 obj_pos)
+static __maybe_unused FSC_S32 sendAttention(SopType sop, FSC_U32 obj_pos)
 {
     // TODO
     return 1;

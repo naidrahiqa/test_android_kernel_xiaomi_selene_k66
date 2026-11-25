@@ -77,7 +77,7 @@ static int fusb302_i2c_suspend(struct device* dev)
         return 0;
 }
 
-int fusb30x_alert_status_clear(struct tcpc_device *tcpc,
+static int fusb30x_alert_status_clear(struct tcpc_device *tcpc,
 						uint32_t mask)
 {
 	pr_info("%s: enter \n",__func__);
@@ -88,13 +88,13 @@ static int fusb30x_tcpc_init(struct tcpc_device *tcpc, bool sw_reset)
 	pr_info("%s: enter \n",__func__);
 	return 0;
 }
-int fusb30x_fault_status_clear(struct tcpc_device *tcpc,
+static int fusb30x_fault_status_clear(struct tcpc_device *tcpc,
 						uint8_t status)
 {
 	pr_info("%s: enter \n",__func__);
 	return 0;
 }
-int fusb30x_get_alert_mask(struct tcpc_device *tcpc, uint32_t *mask)
+static int fusb30x_get_alert_mask(struct tcpc_device *tcpc, uint32_t *mask)
 {
 	pr_info("%s: enter \n",__func__);
 	return 0;
@@ -113,7 +113,7 @@ static int fusb30x_get_power_status(struct tcpc_device *tcpc)
 	pr_info("%s: enter \n",__func__);
 	return 0;
 }
-int fusb30x_get_fault_status(struct tcpc_device *tcpc,
+static int fusb30x_get_fault_status(struct tcpc_device *tcpc,
 						uint8_t *status)
 {
 	pr_info("%s: enter \n",__func__);
@@ -151,12 +151,12 @@ static int fusb30x_set_low_power_mode(
 	pr_info("%s: enter \n",__func__);
 	return 0;
 }
-int fusb30x_set_watchdog(struct tcpc_device *tcpc_dev, bool en)
+static __maybe_unused int fusb30x_set_watchdog(struct tcpc_device *tcpc_dev, bool en)
 {
 	pr_info("%s: enter \n",__func__);
 	return 0;
 }
-int fusb30x_set_intrst(struct tcpc_device *tcpc_dev, bool en)
+static __maybe_unused int fusb30x_set_intrst(struct tcpc_device *tcpc_dev, bool en)
 {
 	pr_info("%s: enter \n",__func__);
 	return 0;

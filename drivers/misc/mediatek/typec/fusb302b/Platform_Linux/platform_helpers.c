@@ -1184,7 +1184,7 @@ FSC_S32 fusb_EnableInterrupts(void)
     return 0;
 }
 
-void fusb_StartTimer(struct hrtimer *timer, FSC_U32 time_us)
+static void fusb_StartTimer(struct hrtimer *timer, FSC_U32 time_us)
 {
     ktime_t ktime;
     struct fusb30x_chip *chip = fusb30x_GetChip();
@@ -1200,7 +1200,7 @@ void fusb_StartTimer(struct hrtimer *timer, FSC_U32 time_us)
     return;
 }
 
-void fusb_StopTimer(struct hrtimer *timer)
+static void fusb_StopTimer(struct hrtimer *timer)
 {
     struct fusb30x_chip *chip = fusb30x_GetChip();
     if (!chip) {

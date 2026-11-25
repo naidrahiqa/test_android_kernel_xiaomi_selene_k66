@@ -243,13 +243,13 @@ void platform_delay_10us(FSC_U32 delayCount)
 * Description:     A callback used by the core to report the new data role after
 *                  a data role swap.
 *******************************************************************************/
-void platform_set_data_role(FSC_BOOL PolicyIsDFP)
+static __maybe_unused void platform_set_data_role(FSC_BOOL PolicyIsDFP)
 {
     // Optional: Control Data Direction
 }
 
 /* Returns the current time in us */
-FSC_U32 platform_current_time(void)
+static __maybe_unused FSC_U32 platform_current_time(void)
 {
     return get_system_time_us();
 }
@@ -257,7 +257,7 @@ FSC_U32 platform_current_time(void)
 /* Return a "packed" timestamp value of seconds and tenths of ms in the
  * format 0xSSSSMMMM
  */
-FSC_U32 platform_timestamp(void)
+static FSC_U32 platform_timestamp(void)
 {
     FSC_U32 time_ms = get_system_time_us() / 1000;  /* uS to mS */
     FSC_U32 timestamp = time_ms / 1000;   /* Get seconds value */

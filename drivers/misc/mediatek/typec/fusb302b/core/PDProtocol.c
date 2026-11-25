@@ -798,7 +798,7 @@ void ProtocolVerifyGoodCRC(struct Port *port)
     }
 }
 
-SopType DecodeSopFromPdMsg(FSC_U8 msg0, FSC_U8 msg1)
+static __maybe_unused SopType DecodeSopFromPdMsg(FSC_U8 msg0, FSC_U8 msg1)
 {
     /* this SOP* decoding is based on FUSB302 GUI:
      * SOP   => 0b 0xx1 xxxx xxx0 xxxx
