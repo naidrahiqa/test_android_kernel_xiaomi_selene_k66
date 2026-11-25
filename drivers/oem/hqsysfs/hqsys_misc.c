@@ -178,3 +178,4 @@ late_initcall(hq_misc_sys_init);
 MODULE_AUTHOR("KaKa Ni <nigang@hq_misc.com>");
 MODULE_DESCRIPTION("Huaqin Hardware Info Driver");
 MODULE_LICENSE("GPL");
+MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
