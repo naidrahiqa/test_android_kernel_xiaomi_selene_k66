@@ -27,6 +27,26 @@
  * mt6768_mt6358_spk_amp_event()
  */
 #define EXT_SPK_AMP_W_NAME "Ext_Speaker_Amp"
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+#define EXT_RCV_AMP_W_NAME "Ext_Reciver_Amp"
+#endif
+
+enum aw87xxx_selene_mode {
+	AW87XXX_OFF_MODE = 0,
+	AW87XXX_MUSIC_MODE = 1,
+	AW87XXX_RCV_MODE = 4,
+};
+
+enum fsm_selene_scene {
+	FSM_SCENE_INDEX_MUSIC = 0,
+	FSM_SCENE_INDEX_VOICE = 1,
+};
+
+#if IS_ENABLED(CONFIG_SND_SOC_FS16XX)
+extern void fsm_set_scene(int scene);
+extern void fsm_speaker_onn(void);
+extern void fsm_speaker_off(void);
+#endif
 
 static const char *const mt6768_spk_type_str[] = {MTK_SPK_NOT_SMARTPA_STR,
 						  MTK_SPK_RICHTEK_RT5509_STR,
@@ -74,40 +94,6 @@ static int mt6768_spk_i2s_in_type_get(struct snd_kcontrol *kcontrol,
 	ucontrol->value.integer.value[0] = idx;
 	return 0;
 }
-
-static int mt6768_mt6358_spk_amp_event(struct snd_soc_dapm_widget *w,
-				       struct snd_kcontrol *kcontrol,
-				       int event)
-{
-	struct snd_soc_dapm_context *dapm = w->dapm;
-	struct snd_soc_card *card = dapm->card;
-
-	dev_info(card->dev, "%s(), event %d\n", __func__, event);
-
-	switch (event) {
-	case SND_SOC_DAPM_POST_PMU:
-		/* spk amp on control */
-		break;
-	case SND_SOC_DAPM_PRE_PMD:
-		/* spk amp off control */
-		break;
-	default:
-		break;
-	}
-
-	return 0;
-};
-
-static const struct snd_soc_dapm_widget mt6768_mt6358_widgets[] = {
-	SND_SOC_DAPM_SPK(EXT_SPK_AMP_W_NAME, mt6768_mt6358_spk_amp_event),
-};
-
-static const struct snd_soc_dapm_route mt6768_mt6358_routes[] = {
-	{EXT_SPK_AMP_W_NAME, NULL, "LINEOUT L"},
-	{EXT_SPK_AMP_W_NAME, NULL, "LINEOUT L HSSPK"},
-	{EXT_SPK_AMP_W_NAME, NULL, "Headphone L Ext Spk Amp"},
-	{EXT_SPK_AMP_W_NAME, NULL, "Headphone R Ext Spk Amp"},
-};
 
 #if IS_ENABLED(CONFIG_SND_SOC_AW87559)
 static const char *const aw87xxx_mode_str[] = {
@@ -162,8 +148,145 @@ static int aw87559_rcv_mode_set(struct snd_kcontrol *kcontrol,
 }
 #endif
 
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+static int rcv_amp_mode;
+static const char *const rcv_amp_type_str[] = {
+	"SPEAKER_MODE", "RECIEVER_MODE"
+};
+static const struct soc_enum rcv_amp_type_enum =
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(rcv_amp_type_str), rcv_amp_type_str);
+
+static int mt6768_rcv_amp_mode_get(struct snd_kcontrol *kcontrol,
+				   struct snd_ctl_elem_value *ucontrol)
+{
+	pr_info("%s() = %d\n", __func__, rcv_amp_mode);
+	ucontrol->value.integer.value[0] = rcv_amp_mode;
+	return 0;
+}
+
+static int mt6768_rcv_amp_mode_set(struct snd_kcontrol *kcontrol,
+				   struct snd_ctl_elem_value *ucontrol)
+{
+	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
+
+	if (ucontrol->value.enumerated.item[0] >= e->items)
+		return -EINVAL;
+
+	rcv_amp_mode = ucontrol->value.integer.value[0];
+	pr_info("%s() = %d\n", __func__, rcv_amp_mode);
+	return 0;
+}
+
+static void mt6768_selene_pa_ctrl(bool enable, int32_t channel,
+				  uint8_t aw_mode, int fsm_scene)
+{
+	if (mtk_spk_get_type() == MTK_SPK_FOURSEMI_FS16XX) {
+#if IS_ENABLED(CONFIG_SND_SOC_FS16XX)
+		if (enable) {
+			fsm_set_scene(fsm_scene);
+			fsm_speaker_onn();
+		} else {
+			fsm_speaker_off();
+		}
+#endif
+		return;
+	}
+
+#if IS_ENABLED(CONFIG_SND_SOC_AW87559)
+	aw87xxx_audio_scene_load(enable ? aw_mode : AW87XXX_OFF_MODE, channel);
+#endif
+}
+#endif
+
+static int mt6768_mt6358_spk_amp_event(struct snd_soc_dapm_widget *w,
+				       struct snd_kcontrol *kcontrol,
+				       int event)
+{
+	struct snd_soc_dapm_context *dapm = w->dapm;
+	struct snd_soc_card *card = dapm->card;
+
+	dev_info(card->dev, "%s(), event %d\n", __func__, event);
+
+	switch (event) {
+	case SND_SOC_DAPM_POST_PMU:
+		/* spk amp on control */
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+		mt6768_selene_pa_ctrl(true, 0, AW87XXX_MUSIC_MODE,
+				      FSM_SCENE_INDEX_MUSIC);
+#endif
+		break;
+	case SND_SOC_DAPM_PRE_PMD:
+		/* spk amp off control */
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+		mt6768_selene_pa_ctrl(false, 0, AW87XXX_OFF_MODE,
+				      FSM_SCENE_INDEX_MUSIC);
+#endif
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+};
+
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+static int mt6768_mt6358_rcv_amp_event(struct snd_soc_dapm_widget *w,
+				       struct snd_kcontrol *kcontrol,
+				       int event)
+{
+	struct snd_soc_dapm_context *dapm = w->dapm;
+	struct snd_soc_card *card = dapm->card;
+
+	dev_info(card->dev, "%s(), event %d\n", __func__, event);
+
+	switch (event) {
+	case SND_SOC_DAPM_POST_PMU:
+		mt6768_selene_pa_ctrl(true, 1,
+				      rcv_amp_mode ? AW87XXX_RCV_MODE :
+						     AW87XXX_MUSIC_MODE,
+				      rcv_amp_mode ? FSM_SCENE_INDEX_VOICE :
+						     FSM_SCENE_INDEX_MUSIC);
+		break;
+	case SND_SOC_DAPM_PRE_PMD:
+		mt6768_selene_pa_ctrl(false, 1, AW87XXX_OFF_MODE,
+				      FSM_SCENE_INDEX_MUSIC);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+#endif
+
+static const struct snd_soc_dapm_widget mt6768_mt6358_widgets[] = {
+	SND_SOC_DAPM_SPK(EXT_SPK_AMP_W_NAME, mt6768_mt6358_spk_amp_event),
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	SND_SOC_DAPM_SPK(EXT_RCV_AMP_W_NAME, mt6768_mt6358_rcv_amp_event),
+#endif
+};
+
+static const struct snd_soc_dapm_route mt6768_mt6358_routes[] = {
+	{EXT_SPK_AMP_W_NAME, NULL, "LINEOUT L"},
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	{EXT_RCV_AMP_W_NAME, NULL, "Receiver"},
+#endif
+	{EXT_SPK_AMP_W_NAME, NULL, "LINEOUT L HSSPK"},
+	{EXT_SPK_AMP_W_NAME, NULL, "Headphone L Ext Spk Amp"},
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	{EXT_RCV_AMP_W_NAME, NULL, "Headphone R Ext Spk Amp"},
+#else
+	{EXT_SPK_AMP_W_NAME, NULL, "Headphone R Ext Spk Amp"},
+#endif
+};
+
 static const struct snd_kcontrol_new mt6768_mt6358_controls[] = {
 	SOC_DAPM_PIN_SWITCH(EXT_SPK_AMP_W_NAME),
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	SOC_DAPM_PIN_SWITCH(EXT_RCV_AMP_W_NAME),
+	SOC_ENUM_EXT("RCV_AMP_MODE", rcv_amp_type_enum,
+		     mt6768_rcv_amp_mode_get, mt6768_rcv_amp_mode_set),
+#endif
 	SOC_ENUM_EXT("MTK_SPK_TYPE_GET", mt6768_spk_type_enum[0],
 		     mt6768_spk_type_get, NULL),
 	SOC_ENUM_EXT("MTK_SPK_I2S_OUT_TYPE_GET", mt6768_spk_type_enum[1],
@@ -347,6 +470,9 @@ static int mt6768_mt6358_init(struct snd_soc_pcm_runtime *rtd)
 
 	/* disable ext amp connection */
 	snd_soc_dapm_disable_pin(dapm, EXT_SPK_AMP_W_NAME);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	snd_soc_dapm_disable_pin(dapm, EXT_RCV_AMP_W_NAME);
+#endif
 #if IS_ENABLED(CONFIG_SND_SOC_MT6358_ACCDET)
 	mt6358_accdet_init(codec_component, rtd->card);
 #endif

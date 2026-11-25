@@ -2307,6 +2307,7 @@ void fsm_set_scene(int scene)
 	}
 	fsm_mutex_unlock();
 }
+EXPORT_SYMBOL_GPL(fsm_set_scene);
 
 void fsm_set_volume(int volume)
 {
@@ -2510,6 +2511,7 @@ void fsm_speaker_onn(void)
 	pr_debug("done");
 	fsm_mutex_unlock();
 }
+EXPORT_SYMBOL_GPL(fsm_speaker_onn);
 
 void fsm_speaker_off(void)
 {
@@ -2537,6 +2539,7 @@ void fsm_speaker_off(void)
 	pr_debug("done");
 	fsm_mutex_unlock();
 }
+EXPORT_SYMBOL_GPL(fsm_speaker_off);
 
 void fsm_stereo_flip(int next_angle)
 {

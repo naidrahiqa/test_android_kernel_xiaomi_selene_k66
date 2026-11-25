@@ -1696,6 +1696,12 @@ static int mtk_hp_dual_spk_enable(struct mt6358_priv *priv)
 	}
 #endif
 	dev_info(priv->dev, "+%s()\n", __func__);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	/* Invert left channel for Selene speaker polarity */
+	regmap_update_bits(priv->regmap, MT6358_AFUNC_AUD_CON0,
+			   0x1 << CCI_LCH_INV_SFT,
+			   0x1 << CCI_LCH_INV_SFT);
+#endif
 
 	if (!priv->pull_down_stay_enable) {
 		/* Pull-down HPL/R to AVSS28_AUD */
@@ -2270,6 +2276,12 @@ static int mt_lo_event(struct snd_soc_dapm_widget *w,
 		/* Switch LOL MUX to audio DAC R */
 		regmap_update_bits(priv->regmap, MT6358_AUDDEC_ANA_CON7,
 				   0x3 << 2, 0x1 << 2);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+		/* Invert left channel for Selene speaker polarity */
+		regmap_update_bits(priv->regmap, MT6358_AFUNC_AUD_CON0,
+				   0x1 << CCI_LCH_INV_SFT,
+				   0x1 << CCI_LCH_INV_SFT);
+#endif
 
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
