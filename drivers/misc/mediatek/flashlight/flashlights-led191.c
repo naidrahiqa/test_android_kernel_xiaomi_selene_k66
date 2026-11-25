@@ -37,13 +37,18 @@ static struct work_struct led191_work;
 
 /* define pinctrl */
 #define LED191_PINCTRL_PIN_HWEN 0
+#define LED191_PINCTRL_PIN_HWSEL 1
 #define LED191_PINCTRL_PINSTATE_LOW 0
 #define LED191_PINCTRL_PINSTATE_HIGH 1
-#define LED191_PINCTRL_STATE_HWEN_HIGH "hwen_high"
-#define LED191_PINCTRL_STATE_HWEN_LOW  "hwen_low"
+#define LED191_PINCTRL_STATE_HWEN_HIGH "hw_ch0_high"
+#define LED191_PINCTRL_STATE_HWEN_LOW  "hw_ch0_low"
+#define LED191_PINCTRL_STATE_HWSEL_HIGH "hw_ch1_high"
+#define LED191_PINCTRL_STATE_HWSEL_LOW  "hw_ch1_low"
 static struct pinctrl *led191_pinctrl;
 static struct pinctrl_state *led191_hwen_high;
 static struct pinctrl_state *led191_hwen_low;
+static struct pinctrl_state *led191_hwsel_high;
+static struct pinctrl_state *led191_hwsel_low;
 
 /* define usage count */
 static int use_count;
@@ -68,7 +73,7 @@ static int led191_pinctrl_init(struct platform_device *pdev)
 	led191_pinctrl = devm_pinctrl_get(&pdev->dev);
 	if (IS_ERR(led191_pinctrl)) {
 		pr_info("Failed to get flashlight pinctrl.\n");
-		ret = PTR_ERR(led191_pinctrl);
+		return PTR_ERR(led191_pinctrl);
 	}
 
 	/*  Flashlight pin initialization */
@@ -84,6 +89,19 @@ static int led191_pinctrl_init(struct platform_device *pdev)
 	if (IS_ERR(led191_hwen_low)) {
 		pr_info("Failed to init (%s)\n", LED191_PINCTRL_STATE_HWEN_LOW);
 		ret = PTR_ERR(led191_hwen_low);
+	}
+	led191_hwsel_high = pinctrl_lookup_state(
+			led191_pinctrl, LED191_PINCTRL_STATE_HWSEL_HIGH);
+	if (IS_ERR(led191_hwsel_high)) {
+		pr_info("Failed to init (%s)\n",
+			LED191_PINCTRL_STATE_HWSEL_HIGH);
+		ret = PTR_ERR(led191_hwsel_high);
+	}
+	led191_hwsel_low = pinctrl_lookup_state(
+			led191_pinctrl, LED191_PINCTRL_STATE_HWSEL_LOW);
+	if (IS_ERR(led191_hwsel_low)) {
+		pr_info("Failed to init (%s)\n", LED191_PINCTRL_STATE_HWSEL_LOW);
+		ret = PTR_ERR(led191_hwsel_low);
 	}
 
 	return ret;
@@ -111,6 +129,18 @@ static int led191_pinctrl_set(int pin, int state)
 		else
 			pr_info("set err, pin(%d) state(%d)\n", pin, state);
 		break;
+	case LED191_PINCTRL_PIN_HWSEL:
+		if (state == LED191_PINCTRL_PINSTATE_LOW &&
+				!IS_ERR(led191_hwsel_low))
+			ret = pinctrl_select_state(
+					led191_pinctrl, led191_hwsel_low);
+		else if (state == LED191_PINCTRL_PINSTATE_HIGH &&
+				!IS_ERR(led191_hwsel_high))
+			ret = pinctrl_select_state(
+					led191_pinctrl, led191_hwsel_high);
+		else
+			pr_info("set err, pin(%d) state(%d)\n", pin, state);
+		break;
 	default:
 		pr_info("set err, pin(%d) state(%d)\n", pin, state);
 		break;
@@ -127,15 +157,17 @@ static int led191_pinctrl_set(int pin, int state)
 /* flashlight enable function */
 static int led191_enable(void)
 {
-	int pin = LED191_PINCTRL_PIN_HWEN;
+	int enpin = LED191_PINCTRL_PIN_HWEN;
+	int selpin = LED191_PINCTRL_PIN_HWSEL;
 
 	if (g_flash_duty == 1) {
-		led191_pinctrl_set(pin, 1);
+		/* torch mode */
+		led191_pinctrl_set(enpin, 1);
 	} else {
-		led191_pinctrl_set(pin, 1);
-		led191_pinctrl_set(pin, 0);
+		/* flash mode */
+		led191_pinctrl_set(enpin, 1);
+		led191_pinctrl_set(selpin, 0);
 	}
-	led191_pinctrl_set(pin, 1);
 
 	return 0;
 }
@@ -143,10 +175,13 @@ static int led191_enable(void)
 /* flashlight disable function */
 static int led191_disable(void)
 {
-	int pin = 0;
-	int state = 0;
+	int enpin = LED191_PINCTRL_PIN_HWEN;
+	int selpin = LED191_PINCTRL_PIN_HWSEL;
 
-	return led191_pinctrl_set(pin, state);
+	led191_pinctrl_set(enpin, 0);
+	led191_pinctrl_set(selpin, 0);
+
+	return 0;
 }
 
 /* set flashlight level */
