@@ -17,4 +17,4 @@ focaltech_spi-y := \
 	focaltech_esdcheck.o \
 	focaltech_point_report_check.o \
 	focaltech_flash.o \
-	focaltech_spi.o
+	focaltech_spi_bus.o
