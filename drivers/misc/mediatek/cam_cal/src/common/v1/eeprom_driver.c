@@ -27,6 +27,9 @@
 #include <linux/fs.h>
 #include <linux/compat.h>
 #endif
+#ifdef CAM_CALGETDLT_DEBUG
+#include <linux/ktime.h>
+#endif
 
 
 
@@ -419,8 +422,8 @@ static inline int EEPROM_get_read(void *pBuff)
 	struct stCAM_CAL_CMD_INFO_STRUCT *pCmdInfo = NULL;
 
 #ifdef CAM_CALGETDLT_DEBUG
-	struct timeval ktv1, ktv2;
-	unsigned long TimeIntervalUS;
+	ktime_t kt1, kt2;
+	s64 TimeIntervalUS;
 #endif
 
 	pInfo = (struct stCAM_CAL_INFO_STRUCT *)pBuff;
@@ -448,7 +451,7 @@ static inline int EEPROM_get_read(void *pBuff)
 		pInfo->u4Offset, pInfo->u4Length, pInfo->sensorID, pInfo->deviceID);
 
 #ifdef CAM_CALGETDLT_DEBUG
-	do_gettimeofday(&ktv1);
+	kt1 = ktime_get();
 #endif
 
 	pCmdInfo = EEPROM_get_cmd_info_ex(pInfo->sensorID, pInfo->deviceID);
@@ -494,13 +497,10 @@ static inline int EEPROM_get_read(void *pBuff)
 		}
 	}
 #ifdef CAM_CALGETDLT_DEBUG
-	do_gettimeofday(&ktv2);
-	if (ktv2.tv_sec > ktv1.tv_sec)
-		TimeIntervalUS = ktv1.tv_usec + 1000000 - ktv2.tv_usec;
-	else
-		TimeIntervalUS = ktv2.tv_usec - ktv1.tv_usec;
+	kt2 = ktime_get();
+	TimeIntervalUS = ktime_us_delta(kt2, kt1);
 
-	pr_debug("Read data %d bytes take %lu us\n", pInfo->u4Length, TimeIntervalUS);
+	pr_debug("Read data %d bytes take %lld us\n", pInfo->u4Length, TimeIntervalUS);
 #endif
 
 	if (copy_to_user((u8 __user *)pInfo->pu1Params, (u8 *)pu1Params, pInfo->u4Length)) {
@@ -523,8 +523,8 @@ static inline int EEPROM_set_write(void *pBuff)
 	struct stCAM_CAL_CMD_INFO_STRUCT *pCmdInfo = NULL;
 
 #ifdef CAM_CALGETDLT_DEBUG
-	struct timeval ktv1, ktv2;
-	unsigned long TimeIntervalUS;
+	ktime_t kt1, kt2;
+	s64 TimeIntervalUS;
 #endif
 
 	pInfo = (struct stCAM_CAL_INFO_STRUCT *)pBuff;
@@ -550,7 +550,7 @@ static inline int EEPROM_set_write(void *pBuff)
 
 	pr_debug("CAM_CALIOC_S_WRITE start!\n");
 #ifdef CAM_CALGETDLT_DEBUG
-	do_gettimeofday(&ktv1);
+	kt1 = ktime_get();
 #endif
 
 	pCmdInfo = EEPROM_get_cmd_info_ex(pInfo->sensorID, pInfo->deviceID);
@@ -564,6 +564,13 @@ static inline int EEPROM_set_write(void *pBuff)
 	}
 
 	if (pCmdInfo != NULL && g_lastDevID != pInfo->deviceID) {
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+		/* Depth camera OTP lives in sensor; disallow I2C EEPROM writes on other IDs */
+		if (pInfo->deviceID != 8) {
+			kfree(pu1Params);
+			return -EFAULT;
+		}
+#endif
 		if (EEPROM_set_i2c_bus(pInfo->deviceID, pCmdInfo) != 0) {
 			pr_debug("deviceID Error!\n");
 			kfree(pu1Params);
@@ -582,13 +589,10 @@ static inline int EEPROM_set_write(void *pBuff)
 		pr_debug("pCmdInfo == NULL\n");
 
 #ifdef CAM_CALGETDLT_DEBUG
-	do_gettimeofday(&ktv2);
-	if (ktv2.tv_sec > ktv1.tv_sec)
-		TimeIntervalUS = ktv1.tv_usec + 1000000 - ktv2.tv_usec;
-	else
-		TimeIntervalUS = ktv2.tv_usec - ktv1.tv_usec;
+	kt2 = ktime_get();
+	TimeIntervalUS = ktime_us_delta(kt2, kt1);
 
-	pr_debug("Write data %d bytes take %lu us\n", pInfo->u4Length, TimeIntervalUS);
+	pr_debug("Write data %d bytes take %lld us\n", pInfo->u4Length, TimeIntervalUS);
 #endif
 
 	if (copy_to_user((u8 __user *)pInfo->pu1Params, (u8 *)pu1Params, pInfo->u4Length)) {
