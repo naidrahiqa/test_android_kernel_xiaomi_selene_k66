@@ -148,6 +148,10 @@ static struct stAF_DrvList g_stAF_DrvList[MAX_NUM_OF_LENS] = {
 	 LC898122AF_Release, LC898122AF_GetFileName, NULL},
 	{1, AFDRV_WV511AAF, WV511AAF_SetI2Cclient, WV511AAF_Ioctl,
 	 WV511AAF_Release, WV511AAF_GetFileName, NULL},
+#if IS_ENABLED(CONFIG_MTK_LENS_CN3927AF_J19_SUPPORT)
+	{1, AFDRV_CN3927AFJ19, CN3927AFJ19_SetI2Cclient, CN3927AFJ19_Ioctl,
+	 CN3927AFJ19_Release, CN3927AFJ19_GetFileName, NULL},
+#endif
 };
 
 static struct stAF_DrvList *g_pstAF_CurDrv;

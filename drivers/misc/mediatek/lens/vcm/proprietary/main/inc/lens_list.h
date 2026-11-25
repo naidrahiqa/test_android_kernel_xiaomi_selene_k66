@@ -385,4 +385,19 @@ extern long WV511AAF_Ioctl(struct file *a_pstFile, unsigned int a_u4Command,
 extern int WV511AAF_Release(struct inode *a_pstInode, struct file *a_pstFile);
 extern int WV511AAF_GetFileName(unsigned char *pFileName);
 
+#define CN3927AFJ19_SetI2Cclient CN3927AFJ19_SetI2Cclient_Main
+#define CN3927AFJ19_Ioctl CN3927AFJ19_Ioctl_Main
+#define CN3927AFJ19_Release CN3927AFJ19_Release_Main
+#define CN3927AFJ19_PowerDown CN3927AFJ19_PowerDown_Main
+#define CN3927AFJ19_GetFileName CN3927AFJ19_GetFileName_Main
+extern int CN3927AFJ19_SetI2Cclient(struct i2c_client *pstAF_I2Cclient,
+				    spinlock_t *pAF_SpinLock, int *pAF_Opened);
+extern long CN3927AFJ19_Ioctl(struct file *a_pstFile, unsigned int a_u4Command,
+			      unsigned long a_u4Param);
+extern int CN3927AFJ19_Release(struct inode *a_pstInode,
+			       struct file *a_pstFile);
+extern int CN3927AFJ19_PowerDown(struct i2c_client *pstAF_I2Cclient,
+				 int *pAF_Opened);
+extern int CN3927AFJ19_GetFileName(unsigned char *pFileName);
+
 #endif
