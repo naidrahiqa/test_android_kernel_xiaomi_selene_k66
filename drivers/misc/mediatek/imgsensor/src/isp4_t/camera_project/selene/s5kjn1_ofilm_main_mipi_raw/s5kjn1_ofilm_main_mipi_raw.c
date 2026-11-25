@@ -2617,7 +2617,6 @@ static void custom1_setting(void)
 *GLOBALS AFFECTED
 *
 *************************************************************************/
-extern int hbb_flag;
 static kal_uint32 get_imgsensor_id(UINT32 *sensor_id)
 {
 	kal_uint8 i = 0;

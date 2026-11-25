@@ -601,7 +601,7 @@ EXPORT_SYMBOL(exfsm_i2c_probe);
 
 void exfsm_i2c_remove(struct i2c_client *i2c)
 {
-	return fsm_i2c_remove(i2c);
+	fsm_i2c_remove(i2c);
 }
 EXPORT_SYMBOL(exfsm_i2c_remove);
 
