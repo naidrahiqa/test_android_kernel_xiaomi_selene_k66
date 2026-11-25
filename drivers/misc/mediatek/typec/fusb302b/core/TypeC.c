@@ -52,7 +52,7 @@ void StateMachineTypeC(struct Port *port)
         DeviceRead(port->I2cAddr, regInterrupta, 5,
                    &port->Registers.Status.byte[2]);
 
-        pr_info("FUSB bytes inta=%2x, intb=%2x, s0=%2x, s1=%2x, int=%2x\n",
+        pr_info("FUSB bytes inta=%2x, intb=%2x, s0=%2x, s1=%2x, int=%2x, state=%d\n",
             port->Registers.Status.byte[2],port->Registers.Status.byte[3],
             port->Registers.Status.byte[4],port->Registers.Status.byte[5],
             port->Registers.Status.byte[6],port->ConnState);

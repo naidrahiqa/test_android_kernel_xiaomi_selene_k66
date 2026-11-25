@@ -10,6 +10,7 @@
 #include <linux/of_device.h>
 #include <linux/of_gpio.h>
 #include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
 #include <linux/interrupt.h>
 #include <linux/of_irq.h>
 #include <linux/power_supply.h>
@@ -366,7 +367,7 @@ FSC_BOOL fusb_GPIO_Get_IntN(void)
         * If your system routes GPIO calls through a queue of some kind, then
         * it may need to be able to sleep. If so, this call must be used.
         */
-        if (gpio_cansleep(chip->gpio_IntN))
+        if (gpiod_cansleep(gpio_to_desc(chip->gpio_IntN)))
         {
             ret = !gpio_get_value_cansleep(chip->gpio_IntN);
         }

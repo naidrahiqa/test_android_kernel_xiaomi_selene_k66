@@ -32,8 +32,13 @@
 #include <linux/printk.h>
 
 #if !defined(BOOL) && !defined(FALSE) && !defined(TRUE)
-typedef enum _BOOL { FALSE = 0, TRUE } FSC_BOOL;    /* Undefined size */
+enum _BOOL { FALSE = 0, TRUE };
 #endif // !BOOL && !FALSE && !TRUE
+
+#ifndef _FSC_BOOL_DEFINED
+#define _FSC_BOOL_DEFINED
+typedef unsigned int FSC_BOOL;
+#endif
 
 #ifndef FSC_S8
 typedef __s8                FSC_S8;                                            // 8-bit signed

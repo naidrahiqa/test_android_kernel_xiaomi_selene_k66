@@ -268,7 +268,7 @@ FSC_S32 processDiscoverIdentity(struct Port *port, SopType sop, FSC_U32* arr_in,
 
     IdHeader idh;
     CertStatVdo csvdo;
-    Identity id;
+    Identity id = { 0 };
     ProductVdo pvdo;
 
     FSC_U32 arr[7] = { 0 };

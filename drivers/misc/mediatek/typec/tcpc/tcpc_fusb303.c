@@ -17,6 +17,7 @@
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
 #include <linux/of_device.h>
@@ -669,7 +670,7 @@ static bool platform_get_device_irq_state(struct fusb303_chip *chip)
 	cdev = &chip->client->dev;
 	dev_info(cdev, "%s enter\n", __func__);
 
-	if (gpio_cansleep(chip->pdata->int_gpio)) {
+	if (gpiod_cansleep(gpio_to_desc(chip->pdata->int_gpio))) {
 		rc = !gpio_get_value_cansleep(chip->pdata->int_gpio);
 	} else {
 		rc = !gpio_get_value(chip->pdata->int_gpio);
@@ -2010,11 +2011,6 @@ static int fusb303_init_gpio(struct fusb303_chip *chip)
 			chip->pdata->int_gpio, chip->irq_gpio);
 	return ret;
 }
-static void fusb303_free_gpio(struct fusb303_chip *chip)
-{
-	if (gpio_is_valid(chip->pdata->int_gpio))
-		devm_gpio_free(&chip->client->dev, chip->pdata->int_gpio);
-}
 static int fusb303_parse_dt(struct fusb303_chip *chip)
 {
 	struct device *cdev = &chip->client->dev;
@@ -2527,7 +2523,6 @@ err4:
 err3:
 	destroy_workqueue(chip->cc_wq);
 	mutex_destroy(&chip->mlock);
-	fusb303_free_gpio(chip);
 err2:
 	devm_kfree(cdev, chip->pdata);
 err1:
@@ -2561,7 +2556,6 @@ static void fusb303_remove(struct i2c_client *client)
 
 	destroy_workqueue(chip->cc_wq);
 	mutex_destroy(&chip->mlock);
-	fusb303_free_gpio(chip);
 	devm_kfree(cdev, chip->pdata);
 	i2c_set_clientdata(client, NULL);
 	devm_kfree(cdev, chip);

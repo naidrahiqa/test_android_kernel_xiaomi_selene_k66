@@ -1526,7 +1526,7 @@ void PolicySourceSendDRSwap(struct Port *port)
                                     &port->Registers.Control.byte[1]);
                     }
 					notify_observers(DATA_ROLE, port->I2cAddr, NULL);
-                    /* Fall through */
+                    fallthrough;
                 case CMTReject:
                     SetPEState(port, peSourceReady);
                     break;
@@ -1733,7 +1733,7 @@ void PolicySourceSendVCONNSwap(struct Port *port)
         if (TimerExpired(&port->PolicyStateTimer) == TRUE)
         {
             port->PolicySubIndex++;
-            /* Fall through to default. Immediately send PS_RDY */
+            fallthrough;
         }
         else
         {
@@ -1854,7 +1854,7 @@ void PolicySourceEvaluateVCONNSwap(struct Port *port)
         if (TimerExpired(&port->PolicyStateTimer) == TRUE)
         {
             port->PolicySubIndex++;
-            /* Fall through. Immediately send PS_RDY after timer expires. */
+            fallthrough;
         }
         else
         {
@@ -2266,7 +2266,7 @@ void PolicyNotSupported(struct Port *port)
             {
                 TimerDisable(&port->PolicyStateTimer);
                 port->PolicySubIndex++;
-                /* Fall throught to default */
+                fallthrough;
             }
             else
             {
@@ -3299,7 +3299,7 @@ void PolicySinkSendDRSwap(struct Port *port)
                                     &port->Registers.Control.byte[1]);
                     }
 					notify_observers(DATA_ROLE, port->I2cAddr, NULL);
-                    /* Fall through */
+                    fallthrough;
                 case CMTReject:
                     SetPEState(port, peSinkReady);
                     break;
@@ -3513,7 +3513,7 @@ void PolicySinkSendVCONNSwap(struct Port *port)
         if (TimerExpired(&port->PolicyStateTimer) == TRUE)
         {
             port->PolicySubIndex++;
-            /* Fall through to immediately send PS_RDY when timer expires. */
+            fallthrough;
         }
         else
         {
@@ -3639,7 +3639,7 @@ void PolicySinkEvaluateVCONNSwap(struct Port *port)
         if (TimerExpired(&port->PolicyStateTimer) == TRUE)
         {
             port->PolicySubIndex++;
-            /* Fall through if timer expired. Immediately send PS_RDY. */
+            fallthrough;
         }
         else
         {
@@ -4536,7 +4536,7 @@ void PolicyGivePPSStatus(struct Port *port)
         ppsstatus.byte[3] = 0x00;
 
         port->PolicySubIndex++;
-        /* Fall through */
+        fallthrough;
     case 1:
         PolicySendData(port, EXTPPSStatus, ppsstatus.byte, 4,
                        port->PolicyIsSource ? peSourceReady : peSinkReady, 0,
