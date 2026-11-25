@@ -298,7 +298,7 @@ static int fs1801_update_otctrl(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fs1801_reg_init(fsm_dev_t *fsm_dev)
+static int fs1801_reg_init(fsm_dev_t *fsm_dev)
 {
 	int ret;
 
@@ -400,7 +400,7 @@ static int fs1801_f0_ram_init(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fs1801_pre_f0_test(fsm_dev_t *fsm_dev)
+static int fs1801_pre_f0_test(fsm_dev_t *fsm_dev)
 {
 	int ret;
 
@@ -427,7 +427,7 @@ int fs1801_pre_f0_test(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fs1801_f0_test(fsm_dev_t *fsm_dev)
+static int fs1801_f0_test(fsm_dev_t *fsm_dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	const uint32_t *coef_acsbp = NULL;
@@ -483,7 +483,7 @@ int fs1801_f0_test(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fs1801_post_f0_test(fsm_dev_t *fsm_dev)
+static int fs1801_post_f0_test(fsm_dev_t *fsm_dev)
 {
 	int ret;
 

@@ -44,7 +44,7 @@
 /****************************************************************************
 * aw87xxx get battery capacity
 *****************************************************************************/
-int aw87xxx_get_battery_capacity(struct aw87xxx *aw87xxx,
+static int aw87xxx_get_battery_capacity(struct aw87xxx *aw87xxx,
 				 uint32_t *vbat_capacity)
 {
 	char name[] = "battery";

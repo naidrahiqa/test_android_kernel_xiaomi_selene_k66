@@ -663,7 +663,7 @@ int fsm_reg_multiread(fsm_dev_t *fsm_dev, uint8_t reg, uint16_t *pval)
 	return ret;
 }
 
-uint16_t fsm_calc_checksum(uint16_t *data, int len)
+static uint16_t fsm_calc_checksum(uint16_t *data, int len)
 {
 	uint16_t crc = 0;
 	uint8_t index;
@@ -926,7 +926,7 @@ int fsm_get_spk_info(fsm_dev_t *fsm_dev, uint16_t info_type)
 	return info->data[info_type];
 }
 
-int fsm_init_info(fsm_dev_t *fsm_dev)
+static int fsm_init_info(fsm_dev_t *fsm_dev)
 {
 	if (!fsm_dev || !fsm_dev->dev_list) {
 		return -EINVAL;
@@ -1092,7 +1092,7 @@ int fsm_wait_stable(fsm_dev_t *fsm_dev, int type)
 	return 0;
 }
 
-int fsm_set_spkset(fsm_dev_t *fsm_dev)
+static int fsm_set_spkset(fsm_dev_t *fsm_dev)
 {
 	int ret;
 
@@ -1151,7 +1151,7 @@ int fsm_read_vbat(fsm_dev_t *fsm_dev, uint16_t *vbat)
 	return ret;
 }
 
-int fsm_get_vbat(fsm_dev_t *fsm_dev)
+static int fsm_get_vbat(fsm_dev_t *fsm_dev)
 {
 	struct fsm_vbat_state *vbat_state = &g_vbat_state;
 	fsm_config_t *cfg = fsm_get_config();
@@ -1174,7 +1174,7 @@ int fsm_get_vbat(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_write_stereo_ceof(fsm_dev_t *fsm_dev)
+static int fsm_write_stereo_ceof(fsm_dev_t *fsm_dev)
 {
 	stereo_coef_t *stereo_coef;
 	int ret = 0;
@@ -1199,7 +1199,7 @@ int fsm_write_stereo_ceof(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_write_excer_ram(fsm_dev_t *fsm_dev)
+static int fsm_write_excer_ram(fsm_dev_t *fsm_dev)
 {
 	ram_data_t *excer_ram;
 	uint8_t write_buf[4];
@@ -1228,7 +1228,7 @@ int fsm_write_excer_ram(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_write_reg_tbl(fsm_dev_t *fsm_dev, uint16_t scene)
+static int fsm_write_reg_tbl(fsm_dev_t *fsm_dev, uint16_t scene)
 {
 	reg_scene_t *reg_scene;
 	reg_comm_t *reg_comm;
@@ -1295,7 +1295,7 @@ static int parse_otp_write_count(fsm_dev_t *fsm_dev, uint16_t valOTP)
 	return count;
 }
 
-int fsm_write_preset_eq(fsm_dev_t *fsm_dev,
+static int fsm_write_preset_eq(fsm_dev_t *fsm_dev,
 				int ram_id, uint16_t scene)
 {
 	uint8_t write_buf[sizeof(uint32_t)];
@@ -1356,7 +1356,7 @@ int fsm_write_preset_eq(fsm_dev_t *fsm_dev,
 	return ret;
 }
 
-int fsm_switch_preset(fsm_dev_t *fsm_dev)
+static int fsm_switch_preset(fsm_dev_t *fsm_dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	reg_temp_t sysctrl;
@@ -1434,7 +1434,7 @@ int fsm_switch_preset(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_write_preset(fsm_dev_t *fsm_dev)
+static int fsm_write_preset(fsm_dev_t *fsm_dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	reg_temp_t sysctrl;
@@ -1498,7 +1498,7 @@ static int fsm_set_tsctrl(fsm_dev_t *fsm_dev,
 	return ret;
 }
 
-uint32_t fsm_cal_spkr_zmimp(fsm_dev_t *fsm_dev, uint16_t data)
+static uint32_t fsm_cal_spkr_zmimp(fsm_dev_t *fsm_dev, uint16_t data)
 {
 	uint32_t result;
 
@@ -1732,7 +1732,7 @@ int fsm_parse_otp(fsm_dev_t *fsm_dev, uint16_t value,
 	return 0;
 }
 
-int fsm_check_otp(fsm_dev_t *fsm_dev)
+static int fsm_check_otp(fsm_dev_t *fsm_dev)
 {
 	uint16_t otppg2;
 	uint16_t pllc4;
@@ -1766,7 +1766,7 @@ int fsm_check_otp(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_config_vol(fsm_dev_t *fsm_dev)
+static int fsm_config_vol(fsm_dev_t *fsm_dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	struct fsm_vbat_state *vbat_state;
@@ -1867,7 +1867,7 @@ static int fsm_set_cal_mode(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_check_status(fsm_dev_t *fsm_dev)
+static int fsm_check_status(fsm_dev_t *fsm_dev)
 {
 	uint16_t status;
 	uint16_t bf_val;
@@ -1917,7 +1917,7 @@ int fsm_check_status(fsm_dev_t *fsm_dev)
 /*
  * fsm stub api
  */
-int fsm_stub_dev_init(fsm_dev_t *fsm_dev)
+static int fsm_stub_dev_init(fsm_dev_t *fsm_dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	int ret;
@@ -1960,7 +1960,7 @@ int fsm_stub_dev_init(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_stub_start_up(fsm_dev_t *fsm_dev)
+static int fsm_stub_start_up(fsm_dev_t *fsm_dev)
 {
 	uint16_t sysctrl;
 	int ret;
@@ -2059,7 +2059,7 @@ static int fsm_stub_check_stable(fsm_dev_t *fsm_dev, int type)
 	return ret;
 }
 
-int fsm_stub_set_tsignal(fsm_dev_t *fsm_dev, bool enable)
+static int fsm_stub_set_tsignal(fsm_dev_t *fsm_dev, bool enable)
 {
 	if (fsm_dev == NULL) {
 		return -EINVAL;
@@ -2070,7 +2070,7 @@ int fsm_stub_set_tsignal(fsm_dev_t *fsm_dev, bool enable)
 	return fsm_set_tsctrl(fsm_dev, enable, true);
 }
 
-int fsm_stub_set_mute(fsm_dev_t *fsm_dev, bool mute)
+static int fsm_stub_set_mute(fsm_dev_t *fsm_dev, bool mute)
 {
 	int ret;
 
@@ -2087,7 +2087,7 @@ int fsm_stub_set_mute(fsm_dev_t *fsm_dev, bool mute)
 	return ret;
 }
 
-int fsm_stub_shut_down(fsm_dev_t *fsm_dev)
+static int fsm_stub_shut_down(fsm_dev_t *fsm_dev)
 {
 	uint16_t sysctrl;
 	int ret;
@@ -2119,7 +2119,7 @@ static int fsm_stub_store_otp(fsm_dev_t *fsm_dev, uint8_t valOTP)
 	}
 }
 
-int fsm_stub_pre_calib(fsm_dev_t *fsm_dev)
+static int fsm_stub_pre_calib(fsm_dev_t *fsm_dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	int force;
@@ -2156,7 +2156,7 @@ int fsm_stub_pre_calib(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_stub_post_calib(fsm_dev_t *fsm_dev)
+static int fsm_stub_post_calib(fsm_dev_t *fsm_dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	uint8_t valOTP;
@@ -2200,7 +2200,7 @@ int fsm_stub_post_calib(fsm_dev_t *fsm_dev)
 	return ret;
 }
 
-int fsm_stub_dev_deinit(fsm_dev_t *fsm_dev)
+static int fsm_stub_dev_deinit(fsm_dev_t *fsm_dev)
 {
 	if (fsm_dev == NULL) {
 		return -EINVAL;
@@ -2338,7 +2338,7 @@ void fsm_set_fw_name(char *name)
 	}
 }
 
-int fsm_detect_device(fsm_dev_t *fsm_dev, uint8_t dev_id)
+static int fsm_detect_device(fsm_dev_t *fsm_dev, uint8_t dev_id)
 {
 	if (fsm_dev == NULL) {
 		return -EINVAL;

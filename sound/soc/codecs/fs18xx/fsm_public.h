@@ -44,6 +44,8 @@ int fsm_i2c_bulkwrite(fsm_dev_t *fsm_dev, uint8_t reg,
 				uint8_t *data, int len);
 int fsm_i2c_init(void);
 void fsm_i2c_exit(void);
+int exfsm_i2c_probe(struct i2c_client *i2c);
+void exfsm_i2c_remove(struct i2c_client *i2c);
 #endif
 
 void fsm_mutex_lock(void);

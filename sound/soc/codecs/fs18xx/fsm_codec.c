@@ -73,7 +73,7 @@ static int fsm_get_scene_index(uint16_t scene)
 	return index;
 }
 
-int fsm_scene_get(struct snd_kcontrol *kcontrol,
+static int fsm_scene_get(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	fsm_config_t *cfg = fsm_get_config();
@@ -90,7 +90,7 @@ int fsm_scene_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_scene_put(struct snd_kcontrol *kcontrol,
+static int fsm_scene_put(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	int next_scene = ucontrol->value.integer.value[0];
@@ -104,7 +104,7 @@ int fsm_scene_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_volume_get(struct snd_kcontrol *kcontrol,
+static int fsm_volume_get(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	fsm_config_t *cfg = fsm_get_config();
@@ -117,7 +117,7 @@ int fsm_volume_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_volume_put(struct snd_kcontrol *kcontrol,
+static int fsm_volume_put(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	int volume = ucontrol->value.integer.value[0];
@@ -128,7 +128,7 @@ int fsm_volume_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_stop_get(struct snd_kcontrol *kcontrol,
+static int fsm_stop_get(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	fsm_config_t *cfg = fsm_get_config();
@@ -139,7 +139,7 @@ int fsm_stop_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_stop_put(struct snd_kcontrol *kcontrol,
+static int fsm_stop_put(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	int stop = ucontrol->value.integer.value[0];
@@ -149,7 +149,7 @@ int fsm_stop_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_rotation_get(struct snd_kcontrol *kcontrol,
+static int fsm_rotation_get(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	fsm_config_t *cfg = fsm_get_config();
@@ -160,7 +160,7 @@ int fsm_rotation_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_rotation_put(struct snd_kcontrol *kcontrol,
+static int fsm_rotation_put(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	int angle = ucontrol->value.integer.value[0];
@@ -171,7 +171,7 @@ int fsm_rotation_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_monitor_get(struct snd_kcontrol *kcontrol,
+static int fsm_monitor_get(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	fsm_config_t *cfg = fsm_get_config();
@@ -187,7 +187,7 @@ int fsm_monitor_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_monitor_put(struct snd_kcontrol *kcontrol,
+static int fsm_monitor_put(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	fsm_config_t *cfg = fsm_get_config();
@@ -204,7 +204,7 @@ int fsm_monitor_put(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_init_get(struct snd_kcontrol *kcontrol,
+static int fsm_init_get(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	int state;
@@ -216,7 +216,7 @@ int fsm_init_get(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
-int fsm_init_put(struct snd_kcontrol *kcontrol,
+static int fsm_init_put(struct snd_kcontrol *kcontrol,
 			struct snd_ctl_elem_value *ucontrol)
 {
 	fsm_init();
@@ -449,7 +449,7 @@ static int fsm_set_timer(struct fsm_codec *fsm_codec, bool enable)
 	return 0;
 }
 
-int fsm_set_codec_monitor(struct fsm_codec *fsm_codec, bool enable)
+static __maybe_unused int fsm_set_codec_monitor(struct fsm_codec *fsm_codec, bool enable)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	if (!cfg || !fsm_codec) {

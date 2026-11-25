@@ -176,7 +176,7 @@ struct device *fsm_get_pdev(void)
 	return g_fsm_pdev;
 }
 
-int fsm_vddd_on(struct device *dev)
+static int fsm_vddd_on(struct device *dev)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	int ret = 0;
@@ -205,7 +205,7 @@ int fsm_vddd_on(struct device *dev)
 	return ret;
 }
 
-void fsm_vddd_off(void)
+static void fsm_vddd_off(void)
 {
 	fsm_config_t *cfg = fsm_get_config();
 
@@ -417,7 +417,7 @@ static const struct of_device_id fsm_match_tbl[] = {
 };
 #endif
 
-int fsm_i2c_probe(struct i2c_client *i2c)
+static int fsm_i2c_probe(struct i2c_client *i2c)
 {
 	fsm_config_t *cfg = fsm_get_config();
 	fsm_dev_t *fsm_dev;
@@ -498,7 +498,7 @@ int fsm_i2c_probe(struct i2c_client *i2c)
 	return 0;
 }
 
-void fsm_i2c_remove(struct i2c_client *i2c)
+static void fsm_i2c_remove(struct i2c_client *i2c)
 {
 	fsm_dev_t *fsm_dev = i2c_get_clientdata(i2c);
 
