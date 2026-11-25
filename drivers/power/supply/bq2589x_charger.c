@@ -895,6 +895,25 @@ static int bq2589x_disable_safety_timer(struct bq2589x *bq)
 		BQ2589X_EN_TIMER_MASK, val);
 }
 
+static int bq2589x_request_opt_gpio(struct device_node *np,
+				    const char *prop, const char *label)
+{
+	int gpio = of_get_named_gpio(np, prop, 0);
+
+	if (!gpio_is_valid(gpio)) {
+		pr_info("optional %s not present (%d)\n", prop, gpio);
+		return -EINVAL;
+	}
+	if (gpio_request(gpio, label)) {
+		pr_info("request %s failed\n", label);
+		return -EINVAL;
+	}
+	if (gpio_direction_output(gpio, 0))
+		pr_info("%s gpio_direction_output failed\n", label);
+
+	return gpio;
+}
+
 static struct bq2589x_platform_data *bq2589x_parse_dt(struct device_node *np,
 							  struct bq2589x *bq)
 {
@@ -972,45 +991,14 @@ static struct bq2589x_platform_data *bq2589x_parse_dt(struct device_node *np,
 		pdata->boosti = 750;
 		pr_info("Failed to read node of ti,bq2589x,boost-current\n");
 	}
-	bq->otg_enable_pin = of_get_named_gpio(np, "ti,otg-en-gpio", 0);
-	if (bq->otg_enable_pin < 0)
-		pr_info("of get ti,otg-en-gpio failed, ti,otg-en-gpio:%d\n", bq->otg_enable_pin);
-
-	if (gpio_request(bq->otg_enable_pin, "otg_enable_pin")) {
-		pr_info("reset otg_enable_pin failed\n");
-	}
-	if (gpio_direction_output(bq->otg_enable_pin, 0))
-		pr_info("otg_enable_pin gpio_direction_output reset_pin failed\n");
-
-	bq->otg_en2_pin = of_get_named_gpio(np, "ti,otg-en2-gpio", 0);
-	if (bq->otg_en2_pin < 0)
-		pr_info("of get otg_en2_pin failed, otg_en2_pin:%d\n", bq->otg_en2_pin);
-
-	if (gpio_request(bq->otg_en2_pin, "otg_en2_pin")) {
-		pr_info("reset otg_enable_pin failed\n");
-	}
-	if (gpio_direction_output(bq->otg_en2_pin, 0))
-		pr_info("otg_en2_pin gpio_direction_output reset_pin failed\n");
-
-	bq->otg_sgm6111_pin = of_get_named_gpio(np, "ti,otg-sgm6111-gpio", 0);
-	if (bq->otg_sgm6111_pin < 0)
-		pr_info("of get otg_en2_pin failed, otg_sgm6111_pin:%d\n", bq->otg_sgm6111_pin);
-
-	if (gpio_request(bq->otg_sgm6111_pin, "otg_sgm6111_pin")) {
-		pr_info("reset otg_enable_pin failed\n");
-	}
-	if (gpio_direction_output(bq->otg_sgm6111_pin, 0))
-		pr_info("otg_sgm6111_pin gpio_direction_output reset_pin failed\n");
-
-	bq->otg_ocflag_pin = of_get_named_gpio(np, "ti,otg-ocflag-gpio", 0);
-	if (bq->otg_ocflag_pin < 0)
-		pr_info("of get otg_ocflag_pin failed, otg_ocflag_pin:%d\n", bq->otg_ocflag_pin);
-
-	if (gpio_request(bq->otg_ocflag_pin, "otg_ocflag_pin")) {
-		pr_info("reset otg_ocflag_pin failed\n");
-	}
-	if (gpio_direction_output(bq->otg_ocflag_pin, 0))
-		pr_info("otg_ocflag_pin gpio_direction_output reset_pin failed\n");
+	bq->otg_enable_pin = bq2589x_request_opt_gpio(np, "ti,otg-en-gpio",
+						      "otg_enable_pin");
+	bq->otg_en2_pin = bq2589x_request_opt_gpio(np, "ti,otg-en2-gpio",
+						   "otg_en2_pin");
+	bq->otg_sgm6111_pin = bq2589x_request_opt_gpio(np, "ti,otg-sgm6111-gpio",
+						       "otg_sgm6111_pin");
+	bq->otg_ocflag_pin = bq2589x_request_opt_gpio(np, "ti,otg-ocflag-gpio",
+						      "otg_ocflag_pin");
 
 	return pdata;
 }
@@ -1767,31 +1755,39 @@ EXPORT_SYMBOL(bq2589x_enable_ship);
 #endif
 /*Tulip code for TULIP-456 by wanglicheng at 20220523 end*/
 
+static void bq2589x_set_otg_gpios(struct bq2589x *bq, bool high)
+{
+	int pins[] = {
+		bq->otg_enable_pin,
+		bq->otg_en2_pin,
+		bq->otg_sgm6111_pin,
+		bq->otg_ocflag_pin,
+	};
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(pins); i++) {
+		if (gpio_is_valid(pins[i]))
+			gpio_set_value(pins[i], high);
+	}
+}
+
 static int bq2589x_set_otg(struct charger_device *chg_dev, bool en)
 {
 	int ret;
 	struct bq2589x *bq = dev_get_drvdata(&chg_dev->dev);
 
 	if (en) {
-		if (bq->part_no == pn_data[PN_SC89890H]) {
+		if (bq->part_no == pn_data[PN_SC89890H])
 			ret = bq2589x_disable_charger(bq);
-		}
-	gpio_set_value(bq_ex->otg_enable_pin, true);
-	gpio_set_value(bq_ex->otg_en2_pin, true);
-	gpio_set_value(bq_ex->otg_sgm6111_pin, true);
-	gpio_set_value(bq_ex->otg_ocflag_pin, true);
-	msleep(30);
+		bq2589x_set_otg_gpios(bq, true);
+		msleep(30);
 		ret = bq2589x_enable_otg(bq);
 	} else {
-	gpio_set_value(bq_ex->otg_enable_pin, false);
-	gpio_set_value(bq_ex->otg_en2_pin, false);
-	gpio_set_value(bq_ex->otg_sgm6111_pin, false);
-	gpio_set_value(bq_ex->otg_ocflag_pin, false);
-	msleep(30);
+		bq2589x_set_otg_gpios(bq, false);
+		msleep(30);
 		ret = bq2589x_disable_otg(bq);
-		if (bq->part_no == pn_data[PN_SC89890H]) {
+		if (bq->part_no == pn_data[PN_SC89890H])
 			ret = bq2589x_enable_charger(bq);
-		}
 	}
 
 	pr_info("%s OTG %s\n", en ? "enable" : "disable",
@@ -1804,28 +1800,22 @@ int bq2589x_set_enable_otg(bool en)
 {
 	int ret;
 
+	if (!bq_ex)
+		return -ENODEV;
+
 	if (en) {
-			if (bq_ex->part_no == pn_data[PN_SC89890H]) {
-					ret = bq2589x_disable_charger(bq_ex);
-		}
-		gpio_set_value(bq_ex->otg_enable_pin, true);
-		gpio_set_value(bq_ex->otg_en2_pin, true);
-		gpio_set_value(bq_ex->otg_sgm6111_pin, true);
-		gpio_set_value(bq_ex->otg_ocflag_pin, true);
+		if (bq_ex->part_no == pn_data[PN_SC89890H])
+			ret = bq2589x_disable_charger(bq_ex);
+		bq2589x_set_otg_gpios(bq_ex, true);
 		msleep(30);
-			ret = bq2589x_enable_otg(bq_ex);
-	 }
-	else {
-		gpio_set_value(bq_ex->otg_enable_pin, false);
-		gpio_set_value(bq_ex->otg_en2_pin, false);
-		gpio_set_value(bq_ex->otg_sgm6111_pin, false);
-		gpio_set_value(bq_ex->otg_ocflag_pin, false);
+		ret = bq2589x_enable_otg(bq_ex);
+	} else {
+		bq2589x_set_otg_gpios(bq_ex, false);
 		msleep(30);
 		ret = bq2589x_disable_otg(bq_ex);
-		if (bq_ex->part_no == pn_data[PN_SC89890H]) {
-					ret = bq2589x_enable_charger(bq_ex);
-			}
-	 }
+		if (bq_ex->part_no == pn_data[PN_SC89890H])
+			ret = bq2589x_enable_charger(bq_ex);
+	}
 	bq2589x_dump_regs(bq_ex);
 	pr_info("%s OTG %s\n", en ? "enable" : "disable",
 		   !ret ? "successfully" : "failed");
