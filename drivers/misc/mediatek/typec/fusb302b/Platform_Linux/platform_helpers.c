@@ -142,7 +142,7 @@ FSC_S32 fusb_InitializeGPIO(void)
     if (!gpio_is_valid(chip->gpio_VBusOther))
     {
         // Soft fail - provide a warning, but don't quit because we don't really need this VBus if only using VBus5v
-        pr_warning("%s - Warning: Could not get GPIO for VBusOther! Error code: %d\n", __func__, chip->gpio_VBusOther);
+        pr_warn("%s - Warning: Could not get GPIO for VBusOther! Error code: %d\n", __func__, chip->gpio_VBusOther);
     }
     else
     {
@@ -201,7 +201,7 @@ FSC_S32 fusb_InitializeGPIO(void)
     if (!gpio_is_valid(chip->dbg_gpio_StateMachine))
     {
         // Soft fail - provide a warning, but don't quit because we don't really need this VBus if only using VBus5v
-        pr_warning("%s - Warning: Could not get GPIO for Debug GPIO! Error code: %d\n", __func__, chip->dbg_gpio_StateMachine);
+        pr_warn("%s - Warning: Could not get GPIO for Debug GPIO! Error code: %d\n", __func__, chip->dbg_gpio_StateMachine);
     }
     else
     {
