@@ -97,8 +97,8 @@ FSC_S32 fusb_InitializeGPIO(void)
 
 #ifdef FSC_DEBUG
     /* Export to sysfs */
-    gpio_export(chip->gpio_IntN, false);
-    gpio_export_link(&chip->client->dev, FUSB_DT_GPIO_INTN, chip->gpio_IntN);
+    gpiod_export(gpio_to_desc(chip->gpio_IntN), false);
+    gpiod_export_link(&chip->client->dev, FUSB_DT_GPIO_INTN, gpio_to_desc(chip->gpio_IntN));
 #endif // FSC_DEBUG
 
     pr_info("FUSB  %s - INT_N GPIO initialized as pin '%d'\n", __func__, chip->gpio_IntN);
@@ -444,7 +444,7 @@ void fusb_GPIO_Cleanup(void)
     if (gpio_is_valid(chip->gpio_IntN))
     {
 #ifdef FSC_DEBUG
-        gpio_unexport(chip->gpio_IntN);
+        gpiod_unexport(gpio_to_desc(chip->gpio_IntN));
 #endif // FSC_DEBUG
 
         gpio_free(chip->gpio_IntN);
@@ -453,7 +453,7 @@ void fusb_GPIO_Cleanup(void)
     if (gpio_is_valid(chip->gpio_VBus5V))
     {
 #ifdef FSC_DEBUG
-        gpio_unexport(chip->gpio_VBus5V);
+        gpiod_unexport(gpio_to_desc(chip->gpio_VBus5V));
 #endif // FSC_DEBUG
 
         gpio_free(chip->gpio_VBus5V);
@@ -467,7 +467,7 @@ void fusb_GPIO_Cleanup(void)
 #ifdef FSC_DEBUG
     if (gpio_is_valid(chip->dbg_gpio_StateMachine))
     {
-        gpio_unexport(chip->dbg_gpio_StateMachine);
+        gpiod_unexport(gpio_to_desc(chip->dbg_gpio_StateMachine));
         gpio_free(chip->dbg_gpio_StateMachine);
     }
 #endif  // FSC_DEBUG

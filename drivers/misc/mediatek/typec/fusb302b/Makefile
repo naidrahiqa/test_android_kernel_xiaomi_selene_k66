@@ -12,6 +12,7 @@ ccflags-y += \
 	-DFSC_DEBUG \
 	-DFSC_HAVE_VDM \
 	-DFSC_HAVE_DP \
+	-I$(DEVICE_MODULES_PATH)/drivers/power/supply \
 	-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/typec/tcpc/inc \
 	-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/typec/fusb302b/core \
 	-I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/typec/fusb302b/core/modules \
