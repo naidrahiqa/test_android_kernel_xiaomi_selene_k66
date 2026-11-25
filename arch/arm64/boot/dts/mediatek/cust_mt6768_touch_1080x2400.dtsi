@@ -76,6 +76,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	mediatek,pad-select = <0>, <1>;
 
 	novatek@0 {
 		compatible = "novatek,NVT-ts-spi";
