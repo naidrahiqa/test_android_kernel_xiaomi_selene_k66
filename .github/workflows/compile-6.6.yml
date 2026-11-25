@@ -89,6 +89,7 @@ jobs:
 
       - name: Build kernel_device_modules-6.6 out-of-tree modules
         run: |
+          set +e
           set -o pipefail
           make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
             CROSS_COMPILE=aarch64-linux-gnu- \
@@ -98,6 +99,19 @@ jobs:
             DEVCIE_MODULES_INCLUDE="-I${GITHUB_WORKSPACE}/kernel_device_modules-6.6/include" \
             M=../kernel_device_modules-6.6 \
             -j"$(nproc)" modules 2>&1 | tee logs/modules_build.log
+          RC=${PIPESTATUS[0]}
+          if [ "$RC" -ne 0 ]; then
+            echo "=== MODULE BUILD FAILED (rc=$RC), RE-RUNNING WITH -k TO COLLECT ALL ERRORS ==="
+            make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+              CROSS_COMPILE=aarch64-linux-gnu- \
+              KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
+              DEVICE_MODULES_PATH="${GITHUB_WORKSPACE}/kernel_device_modules-6.6" \
+              DEVICE_MODULES_REL_DIR=../kernel_device_modules-6.6 \
+              DEVCIE_MODULES_INCLUDE="-I${GITHUB_WORKSPACE}/kernel_device_modules-6.6/include" \
+              M=../kernel_device_modules-6.6 \
+              -j"$(nproc)" -k modules 2>&1 | tee logs/modules_build_all_errors.log || true
+            exit "$RC"
+          fi
 
       - name: Compile MT6768 DTB & Selene DTBO
         run: |
