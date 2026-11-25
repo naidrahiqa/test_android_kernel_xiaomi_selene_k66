@@ -13,3 +13,4 @@
 
 obj-$(CONFIG_NFC_ST21NFC)		+= st21nfc/
 obj-$(CONFIG_NFC_ST54_SPI)		+= st54spi.o
+obj-$(CONFIG_NFC_PN553_19A_DEVICES)	+= pn553-19a.o

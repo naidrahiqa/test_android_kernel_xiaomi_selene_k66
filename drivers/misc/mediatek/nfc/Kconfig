@@ -36,3 +36,9 @@ config NFC_DEBUG
 	  This option is for debug only, if configures to be y, it the nfc
 	  controller driver and nfc spi controller driver will dump more
 	  log for debug.
+
+config NFC_PN553_19A_DEVICES
+	tristate "NXP PN553 NFC driver for K19A"
+	depends on I2C
+	help
+	  NXP PN553/NQxxx I2C NFC controller driver for Xiaomi K19A (selene/selenes/eos).
