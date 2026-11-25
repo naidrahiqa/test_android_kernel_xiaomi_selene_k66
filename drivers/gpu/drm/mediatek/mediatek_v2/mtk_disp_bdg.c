@@ -148,11 +148,23 @@ static void clk_buf_disp_ctrl(bool enable, struct mtk_dsi *dsi)
 }
 
 #ifdef CONFIG_TARGET_PRODUCT_SELENE
+struct bdg_tag_videolfb {
+	u64 fb_base;
+	u32 islcmfound;
+	u32 fps;
+	u32 vram;
+	char lcmname[1];
+};
+
 static void bdg_selene_apply_panel_timing(void)
 {
 	struct device_node *chosen;
+	const struct bdg_tag_videolfb *vfb;
 	const char *bootargs = NULL;
 	const char *lcm = NULL;
+	const char *p;
+	char lcm_buf[128];
+	int size = 0;
 	bool is_43_02_0b = false;
 
 	chosen = of_find_node_by_path("/chosen");
@@ -160,11 +172,43 @@ static void bdg_selene_apply_panel_timing(void)
 		chosen = of_find_node_by_path("/chosen@0");
 	if (chosen) {
 		if (!of_property_read_string(chosen, "bootargs", &bootargs) &&
-		    bootargs && strstr(bootargs, "43_02_0b"))
-			is_43_02_0b = true;
-		if (!is_43_02_0b &&
-		    !of_property_read_string(chosen, "atag,videolfb-lcmname", &lcm) &&
-		    lcm && strstr(lcm, "43_02_0b"))
+		    bootargs) {
+			p = strstr(bootargs, "LCM_name=");
+			if (p) {
+				size_t i = 0;
+
+				p += strlen("LCM_name=");
+				while (p[i] && p[i] != ' ' &&
+				       i < sizeof(lcm_buf) - 1) {
+					lcm_buf[i] = p[i];
+					i++;
+				}
+				lcm_buf[i] = '\0';
+				if (lcm_buf[0])
+					lcm = lcm_buf;
+			} else if (strstr(bootargs, "43_02_0b")) {
+				is_43_02_0b = true;
+			}
+		}
+		if (!is_43_02_0b && !lcm) {
+			vfb = of_get_property(chosen, "atag,videolfb", &size);
+			if (vfb && size > (int)offsetof(struct bdg_tag_videolfb,
+							lcmname)) {
+				size_t len = min_t(size_t,
+						   size - offsetof(struct bdg_tag_videolfb,
+								   lcmname),
+						   sizeof(lcm_buf) - 1);
+
+				memcpy(lcm_buf, vfb->lcmname, len);
+				lcm_buf[len] = '\0';
+				if (lcm_buf[0])
+					lcm = lcm_buf;
+			}
+		}
+		if (!is_43_02_0b && !lcm)
+			of_property_read_string(chosen, "atag,videolfb-lcmname",
+						&lcm);
+		if (!is_43_02_0b && lcm && strstr(lcm, "43_02_0b"))
 			is_43_02_0b = true;
 		of_node_put(chosen);
 	}

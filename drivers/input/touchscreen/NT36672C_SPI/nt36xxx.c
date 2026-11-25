@@ -2604,14 +2604,27 @@ static struct spi_driver nvt_spi_driver = {
 	},
 };
 
+struct nvt_tag_videolfb {
+	u64 fb_base;
+	u32 islcmfound;
+	u32 fps;
+	u32 vram;
+	char lcmname[1];
+};
+
 static void nvt_detect_lcm_from_chosen(void)
 {
 	struct device_node *chosen;
+	const struct nvt_tag_videolfb *vfb;
 	const char *bootargs = NULL;
 	const char *lcm = NULL;
 	const char *p;
+	char lcm_buf[128];
+	int size = 0;
 
 	chosen = of_find_node_by_path("/chosen");
+	if (!chosen)
+		chosen = of_find_node_by_path("/chosen@0");
 	if (!chosen)
 		return;
 
@@ -2629,8 +2642,32 @@ static void nvt_detect_lcm_from_chosen(void)
 		}
 
 		p = strstr(bootargs, "LCM_name=");
-		if (p)
-			lcm = p + strlen("LCM_name=");
+		if (p) {
+			size_t i = 0;
+
+			p += strlen("LCM_name=");
+			while (p[i] && p[i] != ' ' && i < sizeof(lcm_buf) - 1) {
+				lcm_buf[i] = p[i];
+				i++;
+			}
+			lcm_buf[i] = '\0';
+			if (lcm_buf[0])
+				lcm = lcm_buf;
+		}
+	}
+
+	if (!lcm) {
+		vfb = of_get_property(chosen, "atag,videolfb", &size);
+		if (vfb && size > (int)offsetof(struct nvt_tag_videolfb, lcmname)) {
+			size_t len = min_t(size_t,
+					   size - offsetof(struct nvt_tag_videolfb, lcmname),
+					   sizeof(lcm_buf) - 1);
+
+			memcpy(lcm_buf, vfb->lcmname, len);
+			lcm_buf[len] = '\0';
+			if (lcm_buf[0])
+				lcm = lcm_buf;
+		}
 	}
 
 	if (!lcm)
