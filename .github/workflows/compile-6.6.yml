@@ -1,0 +1,121 @@
+name: Compile Selene Kernel 6.6 Modules
+
+on:
+  push:
+    branches:
+      - dev/xiaomi
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build kernel-6.6 + Selene modules & DTBO
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout kernel_device_modules-6.6
+        uses: actions/checkout@v4
+        with:
+          path: kernel_device_modules-6.6
+
+      - name: Clone base kernel-6.6 (android15-6.6)
+        run: |
+          git clone --depth=1 -b android15-6.6 \
+            https://gitlab.com/mt6768-dev/kernel-6.6.git kernel-6.6
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential cpio dwarves flex \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            libelf-dev libssl-dev lz4 perl python3 rsync wget zstd
+
+      - name: Cache Greenforce Clang
+        id: cache-clang
+        uses: actions/cache@v4
+        with:
+          path: greenforce-clang
+          key: greenforce-clang-latest-v1
+
+      - name: Setup Greenforce Clang
+        run: |
+          if [ "${{ steps.cache-clang.outputs.cache-hit }}" != "true" ]; then
+            mkdir -p greenforce-clang
+            cd greenforce-clang
+            wget -qO- https://raw.githubusercontent.com/greenforce-project/greenforce_clang/refs/heads/main/get_clang.sh | bash
+          fi
+          echo "${GITHUB_WORKSPACE}/greenforce-clang/bin" >> "$GITHUB_PATH"
+
+      - name: Configure kernel + Selene overlays
+        run: |
+          mkdir -p out logs
+          clang --version
+
+          make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
+            gki_defconfig 2>&1 | tee logs/config.log
+
+          (
+            cd kernel-6.6
+            KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ ARCH=arm64 \
+              ./scripts/kconfig/merge_config.sh -m -O "${GITHUB_WORKSPACE}/out" \
+              "${GITHUB_WORKSPACE}/out/.config" \
+              ../kernel_device_modules-6.6/arch/arm64/configs/mgk_64_k66_defconfig \
+              ../kernel_device_modules-6.6/kernel/configs/mt6768_overlay.config \
+              ../kernel_device_modules-6.6/kernel/configs/vendor/xiaomi.config \
+              ../kernel_device_modules-6.6/kernel/configs/vendor/selene.config
+          ) 2>&1 | tee -a logs/config.log
+
+          make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
+            olddefconfig 2>&1 | tee -a logs/config.log
+
+      - name: Build base kernel-6.6 (Image + modules + symvers)
+        run: |
+          set -o pipefail
+          make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
+            DEVICE_MODULES_REL_DIR=../kernel_device_modules-6.6 \
+            -j"$(nproc)" Image modules 2>&1 | tee logs/base_build.log
+
+      - name: Build kernel_device_modules-6.6 out-of-tree modules
+        run: |
+          set -o pipefail
+          make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
+            DEVICE_MODULES_PATH="${GITHUB_WORKSPACE}/kernel_device_modules-6.6" \
+            DEVICE_MODULES_REL_DIR=../kernel_device_modules-6.6 \
+            DEVCIE_MODULES_INCLUDE="-I${GITHUB_WORKSPACE}/kernel_device_modules-6.6/include" \
+            M=../kernel_device_modules-6.6 \
+            -j"$(nproc)" modules 2>&1 | tee logs/modules_build.log
+
+      - name: Compile MT6768 DTB & Selene DTBO
+        run: |
+          set -o pipefail
+          mkdir -p out/dts_verify
+          CPP_FLAGS="-nostdinc -I kernel_device_modules-6.6/include -I kernel-6.6/include -I kernel_device_modules-6.6/arch/arm64/boot/dts/mediatek -I kernel_device_modules-6.6/arch/arm64/boot/dts -I kernel-6.6/scripts/dtc/include-prefixes -undef -D__DTS__ -x assembler-with-cpp"
+          clang -E $CPP_FLAGS kernel_device_modules-6.6/arch/arm64/boot/dts/mediatek/mt6768.dts -o out/dts_verify/mt6768.pp.dts
+          out/scripts/dtc/dtc -@ -I dts -O dtb -Wno-unit_address_vs_reg -Wno-simple_bus_reg -Wno-avoid_default_addr_size -Wno-pci_device_reg -o out/dts_verify/mt6768.dtb out/dts_verify/mt6768.pp.dts
+          clang -E $CPP_FLAGS kernel_device_modules-6.6/arch/arm64/boot/dts/mediatek/selene.dts -o out/dts_verify/selene.pp.dts
+          out/scripts/dtc/dtc -@ -I dts -O dtb -Wno-unit_address_vs_reg -Wno-simple_bus_reg -Wno-avoid_default_addr_size -Wno-pci_device_reg -o out/dts_verify/selene.dtbo out/dts_verify/selene.pp.dts
+          ls -lh out/dts_verify/*.dtb*
+
+      - name: List built Selene .ko modules
+        if: always()
+        run: |
+          find kernel_device_modules-6.6 -name '*.ko' | sort | tee logs/built_ko.txt || true
+
+      - name: Upload build logs and DTBs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selene-k66-build-logs
+          path: |
+            logs/
+            out/dts_verify/
+          if-no-files-found: ignore
