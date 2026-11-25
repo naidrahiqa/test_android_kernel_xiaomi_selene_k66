@@ -444,6 +444,37 @@
 
 &mtk_gauge {
 	charger = <&bq2589x_chg>;
+	difference-fullocv-ith = <(250)>;
+	shutdown-1-time = <(5)>;
+	keep-100-percent = <(1)>;
+	r-fg-value = <(5)>;
+	embedded-sel = <(1)>;
+	pmic-shutdown-current = <(20)>;
+	fg-meter-resistance = <(75)>;
+	car-tune-value = <(99)>;
+	pmic-min-vol = <(33500)>;
+	poweron-system-iboot = <(500)>;
+	shutdown-gauge0-voltage = <(33500)>;
+	temperature-t0 = <(50)>;
+	temperature-t1 = <(25)>;
+	temperature-t2 = <(10)>;
+	temperature-t3 = <(0)>;
+	temperature-t4 = <(-10)>;
+	g-fg-pseudo100-t0 = <(95)>;
+	g-fg-pseudo100-t1 = <(95)>;
+	g-fg-pseudo100-t2 = <(95)>;
+	g-fg-pseudo100-t3 = <(95)>;
+	g-fg-pseudo100-t4 = <(95)>;
+	q-max-sys-voltage-bat0 = <(3550)>;
+	q-max-sys-voltage-bat1 = <(3550)>;
+	q-max-sys-voltage-bat2 = <(3550)>;
+	q-max-sys-voltage-bat3 = <(3550)>;
+	com-fg-meter-resistance = <(100)>;
+	com-r-fg-value = <(0)>;
+	enable-tmp-intr-suspend = <(0)>;
+	active-table = <(5)>;
+	multi-temp-gauge0 = <(1)>;
+#include "mediatek/bat_setting/selene_battery_table.dtsi"
 };
 
 &battery_manager {
@@ -705,6 +736,8 @@
 /* DISPSYS & MT6382 DSC Bridge */
 &bdg_support {
 	compatible = "mediatek,disp,bdg_enabled";
+	bdg-mm-clk = <270>;
+	bdg-rxtx-ratio = <225>;
 };
 
 &pio {
