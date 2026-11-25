@@ -394,6 +394,21 @@ static int lcm_setbacklight_cmdq(void *dsi, dcs_write_gce cb,
 	if (bklic == 24)
 		return ktd3137_brightness_set(level, 1);
 #endif
+	if (bklic < 0) {
+#if IS_ENABLED(CONFIG_BACKLIGHT_LM3697) || IS_ENABLED(CONFIG_BACKLIGHT_KTD3136)
+		int ret;
+#endif
+#if IS_ENABLED(CONFIG_BACKLIGHT_LM3697)
+		ret = lm3697_set_brightness(level, 1);
+		if (ret != -ENODEV)
+			return ret;
+#endif
+#if IS_ENABLED(CONFIG_BACKLIGHT_KTD3136)
+		ret = ktd3137_brightness_set(level, 1);
+		if (ret != -ENODEV)
+			return ret;
+#endif
+	}
 #endif
 
 	if (cb) {

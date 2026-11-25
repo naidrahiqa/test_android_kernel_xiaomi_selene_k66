@@ -28,8 +28,8 @@
 #define KTD3137_REG_PWM			0x06
 #define KTD3137_REG_RAMP		0x07
 #define KTD3137_REG_TRANS_RAMP		0x08
-#define KTD3137_REG_FLASH		0x09	/* assumed, verify against datasheet */
-#define KTD3137_REG_STATUS		0x0a	/* assumed, probe() reads it */
+#define KTD3137_REG_FLASH		0x09
+#define KTD3137_REG_STATUS		0x0a
 
 #define KTD3137_BRIGHTNESS_MAX		2047
 #define KTD3137_BRIGHTNESS_MAX_8BIT	255
@@ -52,8 +52,16 @@
 #define KTD3137_PWM_CH_ALL		0x9f
 #define KTD3137_PWM_MODE_EN		0x80
 
-/* TODO: replace with RESET_CONDITION_BITS from the vendor header */
-#define KTD3137_STATUS_RESET_BITS	0xff
+#define KTD3137_STATUS_CH3_FAULT	BIT(7)
+#define KTD3137_STATUS_CH2_FAULT	BIT(6)
+#define KTD3137_STATUS_CH1_FAULT	BIT(5)
+#define KTD3137_STATUS_OVP		BIT(3)
+#define KTD3137_STATUS_OCP		BIT(1)
+#define KTD3137_STATUS_RESET_BITS	(KTD3137_STATUS_CH3_FAULT | \
+					 KTD3137_STATUS_CH2_FAULT | \
+					 KTD3137_STATUS_CH1_FAULT | \
+					 KTD3137_STATUS_OVP | \
+					 KTD3137_STATUS_OCP)
 
 #define KTD3137_STATUS_POLL_MS		100
 
@@ -204,7 +212,7 @@ static int ktd3137_pwm_apply(struct ktd3137 *ktd, unsigned int brightness)
 				   ktd->max_brightness);
 	state.enabled = brightness != 0;
 
-	return pwm_apply_might_sleep(ktd->pwm, &state);
+	return pwm_apply_state(ktd->pwm, &state);
 }
 
 /* Caller must hold ktd->lock. */
@@ -371,6 +379,9 @@ static const struct backlight_ops ktd3137_bl_ops = {
 static int ktd3137_probe(struct i2c_client *client)
 {
 	struct device *dev = &client->dev;
+	struct backlight_properties props = {
+		.type = BACKLIGHT_RAW,
+	};
 	struct ktd3137 *ktd;
 	int ret;
 
@@ -412,10 +423,7 @@ static int ktd3137_probe(struct i2c_client *client)
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to init chip\n");
 
-	struct backlight_properties props = {
-		.type = BACKLIGHT_RAW,
-		.max_brightness = ktd->max_brightness,
-	};
+	props.max_brightness = ktd->max_brightness;
 
 	ktd->bl = devm_backlight_device_register(dev, "ktd3137-bl", dev, ktd,
 						 &ktd3137_bl_ops, &props);
