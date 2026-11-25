@@ -646,8 +646,11 @@ static const struct i2c_device_id AF_i2c_id[] = {{AF_DRVNAME, 0}, {} };
 /* PATH : vendor\mediatek\proprietary\custom\#project#\kernel\dct\dct */
 #if I2C_CONFIG_SETTING == 2
 static const struct of_device_id MAINAF_of_match[] = {
-	{.compatible = "mediatek,CAMERA_MAIN_AF"}, {},
+	{.compatible = "mediatek,CAMERA_MAIN_AF"},
+	{.compatible = "mediatek,camera_main_af"},
+	{},
 };
+MODULE_DEVICE_TABLE(of, MAINAF_of_match);
 #endif
 
 static struct i2c_driver AF_i2c_driver = {
@@ -718,6 +721,7 @@ static const struct of_device_id gaf_of_device_id[] = {
 	{.compatible = "mediatek,camera_af_lens",},
 	{}
 };
+MODULE_DEVICE_TABLE(of, gaf_of_device_id);
 #endif
 
 /* platform structure */

@@ -115,6 +115,43 @@ enum IMGSENSOR_RETURN imgsensor_hw_init(struct IMGSENSOR_HW *phw)
 	return IMGSENSOR_RETURN_SUCCESS;
 }
 
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+static bool imgsensor_selene_needs_sub2_dovdd(
+	enum IMGSENSOR_SENSOR_IDX sensor_idx,
+	enum IMGSENSOR_HW_PIN pin)
+{
+	if (sensor_idx == IMGSENSOR_SENSOR_IDX_MAIN &&
+	    pin == IMGSENSOR_HW_PIN_DOVDD)
+		return true;
+
+	if ((sensor_idx == IMGSENSOR_SENSOR_IDX_SUB ||
+	     sensor_idx == IMGSENSOR_SENSOR_IDX_MAIN2) &&
+	    pin == IMGSENSOR_HW_PIN_AVDD)
+		return true;
+
+	return false;
+}
+
+static void imgsensor_selene_set_sub2_dovdd(
+	struct IMGSENSOR_HW *phw,
+	enum IMGSENSOR_HW_PIN_STATE state)
+{
+	enum IMGSENSOR_HW_ID sub2_id =
+		phw->sensor_pwr[IMGSENSOR_SENSOR_IDX_SUB2].id[IMGSENSOR_HW_PIN_DOVDD];
+	struct IMGSENSOR_HW_DEVICE *sub2_dev;
+
+	if ((unsigned int)sub2_id >= IMGSENSOR_HW_ID_MAX_NUM)
+		return;
+
+	sub2_dev = phw->pdev[sub2_id];
+	if (sub2_dev && sub2_dev->set)
+		sub2_dev->set(sub2_dev->pinstance,
+			      IMGSENSOR_SENSOR_IDX_SUB2,
+			      IMGSENSOR_HW_PIN_DOVDD,
+			      state);
+}
+#endif
+
 static enum IMGSENSOR_RETURN imgsensor_hw_power_sequence(
 	struct IMGSENSOR_HW             *phw,
 	enum   IMGSENSOR_SENSOR_IDX      sensor_idx,
@@ -169,6 +206,12 @@ static enum IMGSENSOR_RETURN imgsensor_hw_power_sequence(
 				    ppwr_info->pin_state_on);
 
 			mdelay(ppwr_info->pin_on_delay);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+			if (imgsensor_selene_needs_sub2_dovdd(sensor_idx,
+							      ppwr_info->pin))
+				imgsensor_selene_set_sub2_dovdd(
+					phw, IMGSENSOR_HW_PIN_STATE_LEVEL_1800);
+#endif
 		}
 
 		ppwr_info++;
@@ -191,6 +234,13 @@ static enum IMGSENSOR_RETURN imgsensor_hw_power_sequence(
 					    sensor_idx,
 					    ppwr_info->pin,
 					    ppwr_info->pin_state_off);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+				if (imgsensor_selene_needs_sub2_dovdd(
+					    sensor_idx, ppwr_info->pin))
+					imgsensor_selene_set_sub2_dovdd(
+						phw,
+						IMGSENSOR_HW_PIN_STATE_LEVEL_0);
+#endif
 			}
 		}
 	}
