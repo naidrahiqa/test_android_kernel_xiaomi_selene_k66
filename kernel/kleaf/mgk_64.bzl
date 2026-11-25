@@ -3897,7 +3897,63 @@ def get_overlay_modules_list():
         mgk_64_device_modules.append("drivers/misc/mediatek/pmic_tia/pmic_tia.ko")
 
     if "isee400_overlay.config" in DEFCONFIG_OVERLAYS:
-        mgk_64_device_modules.remove("drivers/tee/teei/515/isee.ko")
-        mgk_64_device_modules.append("drivers/tee/teei/400/isee.ko")
+        if "drivers/tee/teei/515/isee.ko" in mgk_64_device_modules:
+            mgk_64_device_modules.remove("drivers/tee/teei/515/isee.ko")
+        if "drivers/tee/teei/400/isee.ko" not in mgk_64_device_modules:
+            mgk_64_device_modules.append("drivers/tee/teei/400/isee.ko")
+
+    if "vendor/xiaomi.config" in DEFCONFIG_OVERLAYS:
+        if "drivers/tee/teei/515/isee.ko" in mgk_64_device_modules:
+            mgk_64_device_modules.remove("drivers/tee/teei/515/isee.ko")
+        if "drivers/tee/teei/400/isee.ko" not in mgk_64_device_modules:
+            mgk_64_device_modules.append("drivers/tee/teei/400/isee.ko")
+        for mod in [
+            "drivers/misc/mediatek/task_turbo/task_turbo.ko",
+            "drivers/misc/mediatek/performance/fpsgo_v3/mtk_fpsgo.ko",
+        ]:
+            if mod in mgk_64_device_modules:
+                mgk_64_device_modules.remove(mod)
+        for mod in [
+            "//vendor/mediatek/kernel_modules/fpsgo_cus:fpsgo_cus",
+            "//vendor/mediatek/kernel_modules/fpsgo_int:fpsgo_int",
+            "//vendor/mediatek/kernel_modules/task_turbo_cus:task_turbo_cus",
+            "//vendor/mediatek/kernel_modules/task_turbo_int:task_turbo_int",
+        ]:
+            if mod in mgk_64_kleaf_modules:
+                mgk_64_kleaf_modules.remove(mod)
+        for mod in [
+            "drivers/oem/misc.ko",
+            "drivers/oem/simtray/simtray.ko",
+            "drivers/oem/thermal/mtk_xiaomi_thermal.ko",
+            "drivers/video/backlight/lm3697.ko",
+            "drivers/video/backlight/ktd3136.ko",
+        ]:
+            if mod not in mgk_64_device_modules:
+                mgk_64_device_modules.append(mod)
+
+    if "vendor/selene.config" in DEFCONFIG_OVERLAYS:
+        if "drivers/input/touchscreen/NT36532/nt36532.ko" in mgk_64_device_modules:
+            mgk_64_device_modules.remove("drivers/input/touchscreen/NT36532/nt36532.ko")
+        for mod in [
+            "drivers/oem/hqsysfs/hqsysfs.ko",
+            "drivers/oem/hqsysfs/hqsys_misc.ko",
+            "drivers/oem/hqsysfs/hqsys_pcba.ko",
+            "drivers/power/supply/smb1351_charger.ko",
+            "drivers/gpu/drm/panel/ocp2131_bias.ko",
+            "drivers/gpu/drm/panel/panel-k19a-36-02-0a-dsc-vdo.ko",
+            "drivers/gpu/drm/panel/panel-k19a-43-02-0b-dsc-vdo.ko",
+            "drivers/gpu/drm/panel/panel-k19a-36-03-0c-dsc-vdo.ko",
+            "drivers/misc/mediatek/flashlight/flashlights-led191.ko",
+            "drivers/input/touchscreen/NT36672C_SPI/nt36672c_spi.ko",
+            "drivers/input/touchscreen/focaltech_spi/focaltech_spi.ko",
+            "sound/soc/codecs/aw87559/snd-soc-aw87559.ko",
+            "drivers/misc/mediatek/typec/fusb302b/fusb302.ko",
+            "drivers/misc/mediatek/typec/tcpc/tcpc_fusb303.ko",
+            "drivers/input/fingerprint/goodix/gf_spi_tee.ko",
+            "drivers/input/fingerprint/fpc/fpc1022_tee.ko",
+            "drivers/misc/mediatek/nfc/pn553-19a.ko",
+        ]:
+            if mod not in mgk_64_device_modules:
+                mgk_64_device_modules.append(mod)
 
 get_overlay_modules_list()
