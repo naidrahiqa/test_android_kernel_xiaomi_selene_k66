@@ -668,7 +668,7 @@ static int aw87xxx_scene_update(struct aw87xxx *aw87xxx, uint8_t scence_mode)
 	}
 
 	return request_firmware_nowait(THIS_MODULE,
-				       FW_ACTION_HOTPLUG,
+				       FW_ACTION_UEVENT,
 				       aw87xxx->cfg_name[scence_mode],
 				       aw87xxx->dev,
 				       GFP_KERNEL,
@@ -744,7 +744,7 @@ static int aw87xxx_vbat_monitor_update(struct aw87xxx *aw87xxx)
 	aw_dev_info(aw87xxx->dev, "%s enter\n", __func__);
 
 	return request_firmware_nowait(THIS_MODULE,
-				FW_ACTION_HOTPLUG,
+				FW_ACTION_UEVENT,
 				aw87xxx->vmax_cfg_name,
 				aw87xxx->dev,
 				GFP_KERNEL,
@@ -1454,8 +1454,6 @@ static int aw87xxx_i2c_probe(struct i2c_client *client)
 	return 0;
 
  exit_i2c_check_id_failed:
-	if (gpio_is_valid(aw87xxx->reset_gpio))
-		devm_gpio_free(&client->dev, aw87xxx->reset_gpio);
  exit_devm_kzalloc_failed:
  exit_check_functionality_failed:
 	return ret;
@@ -1464,9 +1462,6 @@ static int aw87xxx_i2c_probe(struct i2c_client *client)
 static void aw87xxx_i2c_remove(struct i2c_client *client)
 {
 	struct aw87xxx *aw87xxx = i2c_get_clientdata(client);
-
-	if (gpio_is_valid(aw87xxx->reset_gpio))
-		devm_gpio_free(&client->dev, aw87xxx->reset_gpio);
 
 	list_del(&aw87xxx->list);
 	devm_kfree(&client->dev, aw87xxx);
