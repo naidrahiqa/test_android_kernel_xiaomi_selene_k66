@@ -334,4 +334,8 @@ int fts_ex_mode_recovery(struct fts_ts_data *ts_data);
 void fts_irq_disable(void);
 void fts_irq_enable(void);
 int fts_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value);
+int fts_ts_tp_suspend(void);
+int fts_ts_tp_resume(void);
+int32_t fts_extra_proc_init(void);
+void fts_extra_proc_deinit(void);
 #endif /* __LINUX_FOCALTECH_CORE_H__ */

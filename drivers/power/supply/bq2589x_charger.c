@@ -241,7 +241,7 @@ static int bq2589x_disable_charger(struct bq2589x *bq)
 	return ret;
 }
 
-int bq2589x_adc_start(struct bq2589x *bq, bool oneshot)
+static int bq2589x_adc_start(struct bq2589x *bq, bool oneshot)
 {
 	u8 val;
 	int ret;
@@ -265,13 +265,13 @@ int bq2589x_adc_start(struct bq2589x *bq, bool oneshot)
 	return ret;
 }
 
-int bq2589x_adc_stop(struct bq2589x *bq)
+static int bq2589x_adc_stop(struct bq2589x *bq)
 {
 	return bq2589x_update_bits(bq, BQ2589X_REG_02, BQ2589X_CONV_RATE_MASK,
 				BQ2589X_ADC_CONTINUE_DISABLE << BQ2589X_CONV_RATE_SHIFT);
 }
 
-int bq2589x_adc_read_battery_volt(struct bq2589x *bq)
+static __maybe_unused int bq2589x_adc_read_battery_volt(struct bq2589x *bq)
 {
 	uint8_t val;
 	int volt;
@@ -290,7 +290,7 @@ int bq2589x_adc_read_battery_volt(struct bq2589x *bq)
 	}
 }
 
-int bq2589x_adc_read_sys_volt(struct bq2589x *bq)
+static __maybe_unused int bq2589x_adc_read_sys_volt(struct bq2589x *bq)
 {
 	uint8_t val;
 	int volt;
@@ -309,7 +309,7 @@ int bq2589x_adc_read_sys_volt(struct bq2589x *bq)
 	}
 }
 
-int bq2589x_is_otg_enable(struct bq2589x *bq)
+static int bq2589x_is_otg_enable(struct bq2589x *bq)
 {
 	uint8_t val;
 	int otg_enable;
@@ -327,7 +327,7 @@ int bq2589x_is_otg_enable(struct bq2589x *bq)
 	}
 }
 
-int bq2589x_adc_read_vbus_volt(struct bq2589x *bq, u32 *vol)
+static int bq2589x_adc_read_vbus_volt(struct bq2589x *bq, u32 *vol)
 {
 	uint8_t val;
 	int volt;
@@ -347,7 +347,7 @@ int bq2589x_adc_read_vbus_volt(struct bq2589x *bq, u32 *vol)
 	return ret;
 }
 
-int bq2589x_adc_read_temperature(struct bq2589x *bq)
+static __maybe_unused int bq2589x_adc_read_temperature(struct bq2589x *bq)
 {
 	uint8_t val;
 	int temp;
@@ -366,7 +366,7 @@ int bq2589x_adc_read_temperature(struct bq2589x *bq)
 	}
 }
 
-int bq2589x_adc_read_charge_current(struct bq2589x *bq, u32 *cur)
+static int bq2589x_adc_read_charge_current(struct bq2589x *bq, u32 *cur)
 {
 	uint8_t val;
 	int curr;
@@ -385,7 +385,7 @@ int bq2589x_adc_read_charge_current(struct bq2589x *bq, u32 *cur)
 	return ret;
 }
 
-int bq2589x_set_chargecurrent(struct bq2589x *bq, int curr)
+static int bq2589x_set_chargecurrent(struct bq2589x *bq, int curr)
 {
 	u8 ichg;
 
@@ -402,7 +402,7 @@ int bq2589x_set_chargecurrent(struct bq2589x *bq, int curr)
 						BQ2589X_ICHG_MASK, ichg << BQ2589X_ICHG_SHIFT);
 }
 
-int bq2589x_set_term_current(struct bq2589x *bq, int curr)
+static int bq2589x_set_term_current(struct bq2589x *bq, int curr)
 {
 	u8 iterm;
 
@@ -419,7 +419,7 @@ int bq2589x_set_term_current(struct bq2589x *bq, int curr)
 						BQ2589X_ITERM_MASK, iterm << BQ2589X_ITERM_SHIFT);
 }
 
-int bq2589x_get_term_current(struct bq2589x *bq, int *curr)
+static int bq2589x_get_term_current(struct bq2589x *bq, int *curr)
 {
 	u8 reg_val;
 	int iterm;
@@ -438,7 +438,7 @@ int bq2589x_get_term_current(struct bq2589x *bq, int *curr)
 	return ret;
 }
 
-int bq2589x_set_prechg_current(struct bq2589x *bq, int curr)
+static int bq2589x_set_prechg_current(struct bq2589x *bq, int curr)
 {
 	u8 iprechg;
 
@@ -456,7 +456,7 @@ int bq2589x_set_prechg_current(struct bq2589x *bq, int curr)
 
 }
 
-int bq2589x_set_chargevolt(struct bq2589x *bq, int volt)
+static int bq2589x_set_chargevolt(struct bq2589x *bq, int volt)
 {
 	u8 val;
 
@@ -469,7 +469,7 @@ int bq2589x_set_chargevolt(struct bq2589x *bq, int volt)
 						BQ2589X_VREG_MASK, val << BQ2589X_VREG_SHIFT);
 }
 
-int bq2589x_get_chargevol(struct bq2589x *bq, int *volt)
+static int bq2589x_get_chargevol(struct bq2589x *bq, int *volt)
 {
 	u8 reg_val;
 	int vchg;
@@ -485,7 +485,7 @@ int bq2589x_get_chargevol(struct bq2589x *bq, int *volt)
 	return ret;
 }
 
-int bq2589x_set_input_volt_limit(struct bq2589x *bq, int volt)
+static int bq2589x_set_input_volt_limit(struct bq2589x *bq, int volt)
 {
 	u8 val;
 
@@ -498,7 +498,7 @@ int bq2589x_set_input_volt_limit(struct bq2589x *bq, int volt)
 						BQ2589X_VINDPM_MASK, val << BQ2589X_VINDPM_SHIFT);
 }
 
-int bq2589x_set_input_current_limit(struct bq2589x *bq, int curr)
+static int bq2589x_set_input_current_limit(struct bq2589x *bq, int curr)
 {
 	u8 val;
 
@@ -511,7 +511,7 @@ int bq2589x_set_input_current_limit(struct bq2589x *bq, int curr)
 						val << BQ2589X_IINLIM_SHIFT);
 }
 
-int bq2589x_set_input_icoen(struct bq2589x *bq)
+static int bq2589x_set_input_icoen(struct bq2589x *bq)
 {
 	u8 val;
 
@@ -520,7 +520,7 @@ int bq2589x_set_input_icoen(struct bq2589x *bq)
 	return bq2589x_update_bits(bq, BQ2589X_REG_02, BQ2589X_ICOEN_MASK, val);
 }
 
-int bq2589x_get_input_volt_limit(struct bq2589x *bq, u32 *volt)
+static int bq2589x_get_input_volt_limit(struct bq2589x *bq, u32 *volt)
 {
 	u8 reg_val;
 	int vchg;
@@ -536,7 +536,7 @@ int bq2589x_get_input_volt_limit(struct bq2589x *bq, u32 *volt)
 	return ret;
 }
 
-int bq2589x_get_input_current_limit(struct	bq2589x *sc, u32 *curr)
+static int bq2589x_get_input_current_limit(struct	bq2589x *sc, u32 *curr)
 {
 	u8 reg_val;
 	int icl;
@@ -552,7 +552,7 @@ int bq2589x_get_input_current_limit(struct	bq2589x *sc, u32 *curr)
 	return ret;
 }
 
-int bq2589x_set_watchdog_timer(struct bq2589x *bq, u8 timeout)
+static __maybe_unused int bq2589x_set_watchdog_timer(struct bq2589x *bq, u8 timeout)
 {
 	u8 val;
 
@@ -563,7 +563,7 @@ int bq2589x_set_watchdog_timer(struct bq2589x *bq, u8 timeout)
 						BQ2589X_WDT_MASK, val);
 }
 
-int bq2589x_disable_watchdog_timer(struct bq2589x *bq)
+static int bq2589x_disable_watchdog_timer(struct bq2589x *bq)
 {
 	u8 val = BQ2589X_WDT_DISABLE << BQ2589X_WDT_SHIFT;
 
@@ -571,7 +571,7 @@ int bq2589x_disable_watchdog_timer(struct bq2589x *bq)
 						BQ2589X_WDT_MASK, val);
 }
 
-int bq2589x_reset_watchdog_timer(struct bq2589x *bq)
+static int bq2589x_reset_watchdog_timer(struct bq2589x *bq)
 {
 	u8 val = BQ2589X_WDT_RESET << BQ2589X_WDT_RESET_SHIFT;
 
@@ -579,7 +579,7 @@ int bq2589x_reset_watchdog_timer(struct bq2589x *bq)
 						BQ2589X_WDT_RESET_MASK, val);
 }
 
-int bq2589x_force_dpdm(struct bq2589x *bq)
+static int bq2589x_force_dpdm(struct bq2589x *bq)
 {
 	int ret;
 	int vbus_stat = 0;
@@ -611,7 +611,7 @@ int bq2589x_force_dpdm(struct bq2589x *bq)
 	return ret;
 
 }
-int bq2589x_rerun_bc12(struct charger_device *chg_dev)
+static __maybe_unused int bq2589x_rerun_bc12(struct charger_device *chg_dev)
 {
 	int ret;
 	int vbus_stat = 0;
@@ -649,7 +649,7 @@ int bq2589x_rerun_bc12(struct charger_device *chg_dev)
 }
 
 #if 0
-int bq2589x_enable_dpdm(struct charger_device *chg_dev, bool en)
+static __maybe_unused int bq2589x_enable_dpdm(struct charger_device *chg_dev, bool en)
 {
 	int ret;
 	u8 val;
@@ -670,7 +670,7 @@ int bq2589x_enable_dpdm(struct charger_device *chg_dev, bool en)
 }
 #endif
 
-int bq2589x_reset_chip(struct bq2589x *bq)
+static __maybe_unused int bq2589x_reset_chip(struct bq2589x *bq)
 {
 	int ret;
 	u8 val = BQ2589X_RESET << BQ2589X_RESET_SHIFT;
@@ -680,7 +680,7 @@ int bq2589x_reset_chip(struct bq2589x *bq)
 	return ret;
 }
 
-int bq2589x_enable_hiz_mode(struct bq2589x *bq, bool en)
+static int bq2589x_enable_hiz_mode(struct bq2589x *bq, bool en)
 {
 	u8 val;
 
@@ -697,7 +697,7 @@ int bq2589x_enable_hiz_mode(struct bq2589x *bq, bool en)
 
 }
 
-int bq2589x_exit_hiz_mode(struct bq2589x *bq)
+static __maybe_unused int bq2589x_exit_hiz_mode(struct bq2589x *bq)
 {
 
 	u8 val = BQ2589X_HIZ_DISABLE << BQ2589X_ENHIZ_SHIFT;
@@ -707,7 +707,7 @@ int bq2589x_exit_hiz_mode(struct bq2589x *bq)
 
 }
 
-int bq2589x_get_hiz_mode(struct bq2589x *bq, u8 *state)
+static __maybe_unused int bq2589x_get_hiz_mode(struct bq2589x *bq, u8 *state)
 {
 	u8 val;
 	int ret;
@@ -742,7 +742,7 @@ int bq2589x_get_hub(struct charger_device *chgdev)
 EXPORT_SYMBOL(bq2589x_get_hub);
 #endif
 
-int bq2589x_close_adc(struct charger_device *chg_dev)
+static __maybe_unused int bq2589x_close_adc(struct charger_device *chg_dev)
 {
 	struct bq2589x *bq = dev_get_drvdata(&chg_dev->dev);
 	bq2589x_adc_stop(bq);
@@ -750,7 +750,7 @@ int bq2589x_close_adc(struct charger_device *chg_dev)
 }
 
 #if 0
-int bq2589x_set_bootmode(struct charger_device *chg_dev, int bootmode)
+static __maybe_unused int bq2589x_set_bootmode(struct charger_device *chg_dev, int bootmode)
 {
 	pr_info("bq2589x_set_bootmode bootmode = %d", bootmode);
 	boot_mode = bootmode;
@@ -759,7 +759,7 @@ int bq2589x_set_bootmode(struct charger_device *chg_dev, int bootmode)
 #endif
 
 #if 0
-int bq2589x_get_float_type_flag(struct charger_device *chg_dev)
+static __maybe_unused int bq2589x_get_float_type_flag(struct charger_device *chg_dev)
 {
 	struct bq2589x *bq = dev_get_drvdata(&chg_dev->dev);
 
@@ -768,7 +768,7 @@ int bq2589x_get_float_type_flag(struct charger_device *chg_dev)
 #endif
 
 #if 0
-int bq2589x_get_pogo(struct charger_device *chg_dev)
+static __maybe_unused int bq2589x_get_pogo(struct charger_device *chg_dev)
 {
 	int pogo_type = 0;
 	pogo_type = get_pogo_in_status();
@@ -792,7 +792,7 @@ static int bq2589x_enable_term(struct bq2589x *bq, bool enable)
 	return ret;
 }
 
-int bq2589x_set_boost_current(struct bq2589x *bq, int curr)
+static int bq2589x_set_boost_current(struct bq2589x *bq, int curr)
 {
 	u8 temp;
 
@@ -819,7 +819,7 @@ int bq2589x_set_boost_current(struct bq2589x *bq, int curr)
 				temp << BQ2589X_BOOST_LIM_SHIFT);
 }
 
-int bq2589x_set_boost_voltage(struct bq2589x *bq, int volt)
+static int bq2589x_set_boost_voltage(struct bq2589x *bq, int volt)
 {
 	u8 val = 0;
 
@@ -1692,7 +1692,7 @@ int bq2589x_enable_hz(struct charger_device *chgdev, bool en)
 }
 EXPORT_SYMBOL(bq2589x_enable_hz);
 
-int disable_show_lightning(struct charger_device *chgdev, bool en)
+static __maybe_unused int disable_show_lightning(struct charger_device *chgdev, bool en)
 {
 
 	int ret = 0;
@@ -1711,7 +1711,7 @@ int disable_show_lightning(struct charger_device *chgdev, bool en)
 }
 
 #if 0
-int set_pd_type(struct charger_device *chgdev, bool en)
+static __maybe_unused int set_pd_type(struct charger_device *chgdev, bool en)
 {
 	pd_type = en;
 	return 0;

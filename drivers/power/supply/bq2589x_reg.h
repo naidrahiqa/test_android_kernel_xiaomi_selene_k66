@@ -433,6 +433,8 @@
 #define BQ2589X_VBUS_UVLO (3600 * 1000)
 #define BQ2589X_VBUS_VALID (4200 * 1000)
 
+struct charger_device;
+
 struct bq2589x {
 	struct device *dev;
 	struct i2c_client *client;
@@ -482,5 +484,7 @@ extern int bq2589x_enable_hz(struct charger_device *chgdev, bool en);
 extern int bq2589x_set_enable_otg(bool en);
 extern int bq2589x_is_enable_hiz(struct charger_device *chg_dev, bool *en);
 extern bool bq2589x_is_usb_type(void);
+extern int bq2589x_get_hub(struct charger_device *chgdev);
+extern int bq2589x_enable_ship(struct charger_device *chgdev, bool en);
 extern int thub_plug_flag;
 #endif

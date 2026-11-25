@@ -34,7 +34,6 @@
 #define NVT_DUMP_PARTITION_LEN  (1024)
 #define NVT_DUMP_PARTITION_PATH "/data/local/tmp"
 /*BSP.Touch - 2020.11.13 - add for hw_info */
-extern void get_tp_info(void);
 static ktime_t start, end;
 const struct firmware *fw_entry;
 static size_t fw_need_write_size;

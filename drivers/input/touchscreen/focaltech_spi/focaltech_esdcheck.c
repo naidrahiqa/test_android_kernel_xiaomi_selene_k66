@@ -83,7 +83,7 @@ static struct fts_esdcheck_st fts_esdcheck_data;
 #if LCD_ESD_PATCH
 int lcd_need_reset;
 static int tp_need_recovery; /* LCD reset cause Tp reset */
-int idc_esdcheck_lcderror(struct fts_ts_data *ts_data)
+static int idc_esdcheck_lcderror(struct fts_ts_data *ts_data)
 {
 	int ret = 0;
 	u8 val = 0;
@@ -418,7 +418,7 @@ static struct attribute_group fts_esd_group = {
 	.attrs = fts_esd_mode_attrs,
 };
 
-int fts_create_esd_sysfs(struct device *dev)
+static int fts_create_esd_sysfs(struct device *dev)
 {
 	int ret = 0;
 

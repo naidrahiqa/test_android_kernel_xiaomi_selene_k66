@@ -64,8 +64,6 @@ char fts_lockdown[17] = {0};
 * Global variable or extern global variabls/functions
 *****************************************************************************/
 struct fts_ts_data *fts_data;
-extern int32_t fts_extra_proc_init(void);
-extern int32_t fts_extra_proc_deinit(void);
 #ifdef FTS_TP_DATA_DUMP_EN
 extern	int	fts_tp_data_dump_proc_init(void);
 extern	void fts_tp_data_dump_proc_exit(void);
@@ -830,7 +828,7 @@ static int fts_read_parse_touchdata(struct fts_ts_data *data)
 	return 0;
 }
 #if	FTS_PALM_EN
-int enter_palm_mode(struct fts_ts_data *data)
+static int enter_palm_mode(struct fts_ts_data *data)
 {
 	return 0;
 }

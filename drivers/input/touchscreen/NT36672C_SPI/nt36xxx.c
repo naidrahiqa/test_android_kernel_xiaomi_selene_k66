@@ -53,13 +53,7 @@ uint8_t esd_retry;
 
 /* Huaqin modify for HQ-131628 by shujiawang at 2021/05/10 start */
 bool tp_charger_status;
-extern int32_t nvt_set_charger_switch(uint8_t charger_switch);
 /* Huaqin modify for HQ-131628 by shujiawang at 2021/05/10 end */
-
-#if NVT_TOUCH_EXT_PROC
-extern int32_t nvt_extra_proc_init(void);
-extern void nvt_extra_proc_deinit(void);
-#endif
 
 #if NVT_TOUCH_MP
 extern int32_t nvt_mp_proc_init(void);
@@ -74,7 +68,6 @@ static char tp_version_info[128] = "";
 bool nvt_gesture_flag;
 #if BOOT_UPDATE_FIRMWARE
 static struct workqueue_struct *nvt_fwu_wq;
-extern void Boot_Update_Firmware(struct work_struct *work);
 /*BSP.TP - 2020.11.16 -Start*/
 char *BOOT_UPDATE_FIRMWARE_NAME;
 char *MP_UPDATE_FIRMWARE_NAME;
@@ -664,7 +657,7 @@ Description:
 return:
 	Executive outcomes. 0---success. -1---fail.
 *******************************************************/
-int32_t nvt_read_pid(void)
+static int32_t nvt_read_pid(void)
 {
 	uint8_t buf[4] = {0};
 
@@ -1008,7 +1001,7 @@ Description:
 return:
 	n.a.
 *******************************************************/
-void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
+static void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
 {
 	uint32_t keycode = 0;
 	uint8_t func_type = data[2];
@@ -1316,7 +1309,7 @@ static int32_t nvt_ts_point_data_checksum(uint8_t *buf, uint8_t length)
 #define FUNCPAGE_PALM 4
 #define PACKET_PALM_ON 3
 #define PACKET_PALM_OFF 4
-int32_t nvt_check_palm(uint8_t input_id, uint8_t *data)
+static int32_t nvt_check_palm(uint8_t input_id, uint8_t *data)
 {
 	int32_t ret = 0;
 	uint8_t func_type = data[2];
@@ -1583,7 +1576,7 @@ out:
 }
 
 #if WAKEUP_GESTURE
-int nvt_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
+static int nvt_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
 {
 	if (type == EV_SYN && code == SYN_CONFIG) {
 		if (value == WAKEUP_OFF) {
@@ -1677,7 +1670,7 @@ static struct attribute_group nvt_attribute_group = {
 	.attrs = nvt_attributes
 };
 
-int nvt_create_sysfs(struct spi_device *client)
+static int nvt_create_sysfs(struct spi_device *client)
 {
 	int ret = 0;
 
@@ -1693,7 +1686,7 @@ int nvt_create_sysfs(struct spi_device *client)
 	return ret;
 }
 
-int nvt_remove_sysfs(struct spi_device *client)
+static int nvt_remove_sysfs(struct spi_device *client)
 {
 	sysfs_remove_group(&client->dev.kobj, &nvt_attribute_group);
 	return 0;
@@ -1701,7 +1694,7 @@ int nvt_remove_sysfs(struct spi_device *client)
 /*BSP.TP add nvt_irq - 2020.11.11 - End*/
 
 /* Huaqin modify for HQ-123470 by shujiawang at 2021/03/29 start */
-int tp_compare_ic(void)
+static __maybe_unused int tp_compare_ic(void)
 {
 	NVT_LOG("tp_compare_ic in!!");
 	if (is_ft_lcm == 0) {

@@ -266,4 +266,16 @@ void nvt_bootloader_reset_locked(void);
 int32_t nvt_esd_vdd_tp_recovery(void);
 #endif
 /* Huaqin modify for HQ-144782 by caogaojie at 2021/07/05 end */
+struct seq_file;
+struct work_struct;
+
+void get_tp_info(void);
+ssize_t nvt_irq_control_function(const char *buffer);
+ssize_t nvt_irq_show_function(struct seq_file *m);
+int32_t nvt_ts_tp_suspend(void);
+int32_t nvt_ts_tp_resume(void);
+int32_t nvt_set_charger_switch(uint8_t charger_switch);
+int32_t nvt_extra_proc_init(void);
+void nvt_extra_proc_deinit(void);
+void Boot_Update_Firmware(struct work_struct *work);
 #endif /* _LINUX_NVT_TOUCH_H */

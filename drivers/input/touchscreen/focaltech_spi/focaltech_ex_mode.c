@@ -297,7 +297,7 @@ static ssize_t fts_edge_mode_store(
 
 
 
-void fts_edge_mode_set(char *buf, int cnt)
+static __maybe_unused void fts_edge_mode_set(char *buf, int cnt)
 {
 	int ret = 0;
 	struct fts_ts_data *ts_data = fts_data;

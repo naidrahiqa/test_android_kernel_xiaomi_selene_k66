@@ -64,12 +64,6 @@ extern int is_ft_lcm;
 
 #define XDATA_SECTOR_SIZE   256
 
-#ifdef NVT_IRQ_SWITCH
-/*BSP.TP add*/
-extern ssize_t nvt_irq_control_function(const char *buffer);
-extern ssize_t nvt_irq_show_function(struct seq_file *m);
-#endif
-
 static uint8_t xdata_tmp[2048] = {0};
 static int32_t xdata[2048] = {0};
 
@@ -102,7 +96,7 @@ Description:
 return:
 	n.a.
 *******************************************************/
-int32_t nvt_set_max_power_switch(uint8_t max_power_switch)
+static int32_t nvt_set_max_power_switch(uint8_t max_power_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -140,7 +134,7 @@ nvt_set_max_power_switch_out:
 	return ret;
 }
 
-int32_t nvt_get_max_power_switch(uint8_t *max_power_switch)
+static int32_t nvt_get_max_power_switch(uint8_t *max_power_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -292,7 +286,7 @@ Description:
 return:
 	n.a.
 *******************************************************/
-void nvt_change_mode(uint8_t mode)
+static void nvt_change_mode(uint8_t mode)
 {
 	uint8_t buf[8] = {0};
 
@@ -319,7 +313,7 @@ Description:
 return:
 	Executive outcomes. 0---pipe 0. 1---pipe 1.
 *******************************************************/
-uint8_t nvt_get_fw_pipe(void)
+static uint8_t nvt_get_fw_pipe(void)
 {
 	uint8_t buf[8] = {0};
 
@@ -343,7 +337,7 @@ Description:
 return:
 	n.a.
 *******************************************************/
-void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
+static void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 {
 	int32_t i = 0;
 	int32_t j = 0;
@@ -433,7 +427,7 @@ Description:
 return:
     n.a.
 *******************************************************/
-void nvt_get_mdata(int32_t *buf, uint8_t *m_x_num, uint8_t *m_y_num)
+static __maybe_unused void nvt_get_mdata(int32_t *buf, uint8_t *m_x_num, uint8_t *m_y_num)
 {
     *m_x_num = ts->x_num;
     *m_y_num = ts->y_num;
@@ -463,7 +457,7 @@ static int nvt_gesture_mode_show(struct seq_file *m, void *v)
 	seq_printf(m, "%d\n", nvt_gesture_flag);
 	return 0;
 }
-int32_t nvt_set_er_range_switch(uint8_t er_range_switch)
+static int32_t nvt_set_er_range_switch(uint8_t er_range_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -494,7 +488,7 @@ nvt_set_er_range_switch_out:
 	return ret;
 }
 
-int32_t nvt_get_er_range_switch(uint8_t *er_range_switch)
+static int32_t nvt_get_er_range_switch(uint8_t *er_range_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -638,7 +632,7 @@ static const struct proc_ops nvt_er_range_switch_fops = {
 	.proc_write = nvt_er_range_switch_proc_write,
 };
 
-int32_t nvt_set_edge_reject_switch(uint8_t edge_reject_switch)
+static int32_t nvt_set_edge_reject_switch(uint8_t edge_reject_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -683,7 +677,7 @@ nvt_set_edge_reject_switch_out:
 	return ret;
 }
 
-int32_t nvt_get_edge_reject_switch(uint8_t *edge_reject_switch)
+static int32_t nvt_get_edge_reject_switch(uint8_t *edge_reject_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -1061,7 +1055,7 @@ Description:
 return:
 	Executive outcomes. 0---succeed.
 *******************************************************/
-int32_t nvt_set_pf_switch(uint8_t pf_switch)
+static int32_t nvt_set_pf_switch(uint8_t pf_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -1092,7 +1086,7 @@ nvt_set_pf_switch_out:
 	return ret;
 }
 
-int32_t nvt_get_pf_switch(uint8_t *pf_switch)
+static int32_t nvt_get_pf_switch(uint8_t *pf_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -1243,7 +1237,7 @@ Description:
 return:
 	Executive outcomes. 0---succeed.
 *******************************************************/
-int32_t nvt_set_sensitivity_switch(uint8_t sensitivity_switch)
+static int32_t nvt_set_sensitivity_switch(uint8_t sensitivity_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -1274,7 +1268,7 @@ nvt_set_sensitivity_switch_out:
 	return ret;
 }
 
-int32_t nvt_get_sensitivity_switch(uint8_t *sensitivity_switch)
+static int32_t nvt_get_sensitivity_switch(uint8_t *sensitivity_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -1684,7 +1678,7 @@ nvt_set_charger_switch_out:
 	return ret;
 }
 
-int32_t nvt_get_charger_switch(uint8_t *charger_switch)
+static int32_t nvt_get_charger_switch(uint8_t *charger_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -1903,7 +1897,7 @@ static const struct proc_ops nvt_tp_info_fops = {
 	.proc_release = seq_release,
 };
 /*BSP.TP - Add pocket mode - 2020.11.26*/
-int32_t nvt_set_pocket_palm_switch(uint8_t pocket_palm_switch)
+static int32_t nvt_set_pocket_palm_switch(uint8_t pocket_palm_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
@@ -1943,7 +1937,7 @@ nvt_set_pocket_palm_switch_out:
 	return ret;
 }
 
-int32_t nvt_get_pocket_palm_switch(uint8_t *pocket_palm_switch)
+static int32_t nvt_get_pocket_palm_switch(uint8_t *pocket_palm_switch)
 {
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
