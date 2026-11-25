@@ -201,6 +201,12 @@
 #define IMX582_SENSOR_ID                        0x0582
 #define IMX596_SENSOR_ID                        0x0596
 #define IMX6632X_SENSOR_ID                      0x0663
+#define IMX355_SUNNY_ULTRA_SENSOR_ID            (0x355 + 1)
+#define IMX355_SUNNY_ULTRA_SENSOR_INDIA_ID      (0x355 + 4)
+#define IMX355_SUNNY_ULTRA_SENSOR_CN_ID         (0x355 + 6)
+#define IMX355_AAC_ULTRA_SENSOR_ID              0x355
+#define IMX355_AAC_ULTRA_SENSOR_INDIA_ID        0x358
+#define IMX355_AAC_ULTRA_SENSOR_CN_ID           (0x355 + 5)
 /*OV*/
 #define OV23850_SENSOR_ID                       0x023850
 #define OV16880_SENSOR_ID                       0x016880
@@ -222,6 +228,10 @@
 #define OV8858_SENSOR_ID                        0x8858
 #define OV8858S_SENSOR_ID                      (0x8858+1)
 #define OV8856_SENSOR_ID                        0x885A
+#define OV8856_OFILM_FRONT_SENSOR_ID            0x885A
+#define OV8856_OFILM_FRONT_SENSOR_INDIA_ID      0x885D
+#define OV8856_AAC_FRONT_SENSOR_ID              0x885B
+#define OV8856_AAC_FRONT_SENSOR_INDIA_ID        0x885E
 #define OV8830_SENSOR_ID                        0x8830
 #define OV8825_SENSOR_ID                        0x8825
 #define OV7675_SENSOR_ID                        0x7673
@@ -253,11 +263,21 @@
 #define OV20880MIPI_SENSOR_ID                   0x20880
 #define OV05A20_SENSOR_ID                       0x5305
 #define OX08B40_SENSOR_ID                       0x580841
+#define OV50C40_OFILM_MAIN_SENSOR_ID            0x565043
+#define OV50C40_OFILM_MAIN_SENSOR_INDIA_ID      0x565046
+#define OV50C40_QTECH_MAIN_SENSOR_ID            (0x565043 + 1)
+#define OV50C40_QTECH_MAIN_SENSOR_INDIA_ID      (0x565043 + 4)
+#define OV50C40_QTECH_MAIN_SENSOR_CN_ID         (0x565044 + 5)
+#define OV02B1B_OFILM_SENSOR_ID                 0x002b
+#define OV02B1B_OFILM_SENSOR_INDIA_ID           0x002e
 
 /*S5K*/
 #define S5KHP3SP_SENSOR_ID                      0x1b73
 #define S5KJD1_SENSOR_ID                        0x3841
 #define S5KJN1_SENSOR_ID                        0x38E1
+#define S5KJN1_OFILM_MAIN_SENSOR_ID             0x38e1
+#define S5KJN1_OFILM_MAIN_SENSOR_INDIA_ID       0x38e4
+#define S5KJN1_OFILM_MAIN_SENSOR_CN_ID          (0x38e1 + 5)
 #define S5K2LQSX_SENSOR_ID                      0x2c1a
 #define S5K4H7_SENSOR_ID                        0x487B
 #define S5K3P8SP_SENSOR_ID                      0x3108
@@ -426,6 +446,12 @@
 #define GC02K0_SENSOR_ID                        0x2385
 #define OV16A10_SENSOR_ID                       0x561641
 #define GC02M1B_SENSOR_ID                       0x02e0
+#define GC02M1B_SENSOR_ID1                      (0x02e0 + 2)
+#define GC02M1B_SUNNY_SENSOR_INDIA_ID           (0x02e0 + 5)
+#define GC02M1_MACRO_AAC_SENSOR_ID              0x02e0
+#define GC02M1_MACRO_AAC_SENSOR_INDIA_ID        0x02e3
+#define GC02M1_MACRO_SY_SENSOR_ID               0x02e1
+#define GC02M1_MACRO_SY_SENSOR_INDIA_ID         0x02e4
 #define GC08A3_SENSOR_ID                        0x08a3
 #define MAX96712MIPI_SENSOR_ID  0x52
 #define MAX96712ISXMIPI_SENSOR_ID  0x54
@@ -700,6 +726,17 @@
 #define SENSOR_DRVNAME_MAX96712A2_MIPI_YUV        "max96712a2_mipi_yuv"
 #define SENSOR_DRVNAME_MAX96712A3_MIPI_YUV        "max96712a3_mipi_yuv"
 #define SENSOR_DRVNAME_LT7911_MIPI_YUV        "lt7911_mipi_yuv"
+#define SENSOR_DRVNAME_OV50C40_OFILM_MAIN_MIPI_RAW "ov50c40_ofilm_main_mipi_raw"
+#define SENSOR_DRVNAME_S5KJN1_OFILM_MAIN_MIPI_RAW  "s5kjn1_ofilm_main_mipi_raw"
+#define SENSOR_DRVNAME_OV50C40_QTECH_MAIN_MIPI_RAW "ov50c40_qtech_main_mipi_raw"
+#define SENSOR_DRVNAME_OV8856_OFILM_FRONT_MIPI_RAW "ov8856_ofilm_front_mipi_raw"
+#define SENSOR_DRVNAME_OV8856_AAC_FRONT_MIPI_RAW   "ov8856_aac_front_mipi_raw"
+#define SENSOR_DRVNAME_GC02M1B_SUNNY_MIPI_RAW      "gc02m1b_sunny_mipi_raw"
+#define SENSOR_DRVNAME_OV02B1B_OFILM_MIPI_RAW      "ov02b1b_ofilm_mipi_raw"
+#define SENSOR_DRVNAME_GC02M1_MACRO_AAC_MIPI_RAW   "gc02m1_macro_aac_mipi_raw"
+#define SENSOR_DRVNAME_GC02M1_MACRO_SY_MIPI_RAW    "gc02m1_macro_sy_mipi_raw"
+#define SENSOR_DRVNAME_IMX355_SUNNY_ULTRA_MIPI_RAW "imx355_sunny_ultra_mipi_raw"
+#define SENSOR_DRVNAME_IMX355_AAC_ULTRA_MIPI_RAW   "imx355_aac_ultra_mipi_raw"
 /************************************
  * I3C SENSOR PID (TOTAL 48-BITS)
  ************************************/

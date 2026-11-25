@@ -9,7 +9,47 @@
 #include "eeprom_i2c_custom_driver.h"
 #include "kd_imgsensor.h"
 
+#ifdef GC02M1B_SUNNY_MIPI_RAW
+extern unsigned int gc02m1_read_otp_info(struct i2c_client *client,
+	unsigned int addr, unsigned char *data, unsigned int size);
+#endif
+#ifdef OV02B1B_OFILM_MIPI_RAW
+extern unsigned int ov02b1b_read_otp_info(struct i2c_client *client,
+	unsigned int addr, unsigned char *data, unsigned int size);
+#endif
+
 struct stCAM_CAL_LIST_STRUCT g_camCalList[] = {
+	/* Selene sensor EEPROM entries */
+	{OV50C40_OFILM_MAIN_SENSOR_ID, 0xA2, Common_read_region},
+	{S5KJN1_OFILM_MAIN_SENSOR_ID, 0xA2, Common_read_region},
+	{OV50C40_QTECH_MAIN_SENSOR_ID, 0xA2, Common_read_region},
+	{GC02M1_MACRO_AAC_SENSOR_ID, 0xA4, Common_read_region},
+	{GC02M1_MACRO_SY_SENSOR_ID, 0xA4, Common_read_region},
+	{IMX355_SUNNY_ULTRA_SENSOR_ID, 0xA0, Common_read_region},
+	{IMX355_AAC_ULTRA_SENSOR_ID, 0xA0, Common_read_region},
+	{OV8856_OFILM_FRONT_SENSOR_ID, 0xA2, Common_read_region},
+	{OV8856_AAC_FRONT_SENSOR_ID, 0xA2, Common_read_region},
+#ifdef GC02M1B_SUNNY_MIPI_RAW
+	{GC02M1B_SENSOR_ID1, 0xA2, gc02m1_read_otp_info},
+	{GC02M1B_SUNNY_SENSOR_INDIA_ID, 0xA2, gc02m1_read_otp_info},
+#endif
+#ifdef OV02B1B_OFILM_MIPI_RAW
+	{OV02B1B_OFILM_SENSOR_ID, 0xA2, ov02b1b_read_otp_info},
+	{OV02B1B_OFILM_SENSOR_INDIA_ID, 0xA2, ov02b1b_read_otp_info},
+#endif
+	{OV50C40_OFILM_MAIN_SENSOR_INDIA_ID, 0xA2, Common_read_region},
+	{S5KJN1_OFILM_MAIN_SENSOR_INDIA_ID, 0xA2, Common_read_region},
+	{OV50C40_QTECH_MAIN_SENSOR_INDIA_ID, 0xA2, Common_read_region},
+	{GC02M1_MACRO_AAC_SENSOR_INDIA_ID, 0xA4, Common_read_region},
+	{GC02M1_MACRO_SY_SENSOR_INDIA_ID, 0xA4, Common_read_region},
+	{IMX355_SUNNY_ULTRA_SENSOR_INDIA_ID, 0xA0, Common_read_region},
+	{IMX355_AAC_ULTRA_SENSOR_INDIA_ID, 0xA0, Common_read_region},
+	{OV8856_OFILM_FRONT_SENSOR_INDIA_ID, 0xA2, Common_read_region},
+	{OV8856_AAC_FRONT_SENSOR_INDIA_ID, 0xA2, Common_read_region},
+	{S5KJN1_OFILM_MAIN_SENSOR_CN_ID, 0xA2, Common_read_region},
+	{OV50C40_QTECH_MAIN_SENSOR_CN_ID, 0xA2, Common_read_region},
+	{IMX355_SUNNY_ULTRA_SENSOR_CN_ID, 0xA0, Common_read_region},
+	{IMX355_AAC_ULTRA_SENSOR_CN_ID, 0xA0, Common_read_region},
 	/*Below is commom sensor */
 	{IMX519_SENSOR_ID, 0xA0, Common_read_region},
 	{S5K2T7SP_SENSOR_ID, 0xA4, Common_read_region},

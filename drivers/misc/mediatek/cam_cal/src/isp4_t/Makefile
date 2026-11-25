@@ -21,9 +21,13 @@ else ifeq ($(CONFIG_MTK_CAM_CAL_ISP4_T), y)
 obj-$(CONFIG_MTK_CAM_CAL_ISP4_T) += $(CAM_CAL_OBJ)
 endif
 
+CUSTOM_KERNEL_FLAGS := $(addprefix -D, $(shell echo \
+	$(subst $\",,$(CONFIG_CUSTOM_KERNEL_IMGSENSOR)) | tr a-z A-Z))
+subdir-ccflags-y += $(CUSTOM_KERNEL_FLAGS)
+
 subdir-ccflags-y += -I$(MTK_CUSTOM_PATH)/imgsensor/inc \
                     -I$(MTK_CUSTOM_PATH)/imgsensor/src/$(MTK_PLATFORM)/camera_hw \
                     -I$(MTK_CUSTOM_PATH)/cam_cal/inc \
                     -I$(CAM_CAL_PLATFORM_SRC_PATH) \
                     -I$(CAM_CAL_SRC_PATH)/common/$(COMMON_VERSION) \
-                    -I$(srctree)/drivers/i2c/busses/
+                    -I$(DEVICE_MODULES_PATH)/drivers/i2c/busses/

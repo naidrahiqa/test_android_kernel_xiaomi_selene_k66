@@ -2,7 +2,7 @@
 # Copyright (C) 2020 MediaTek Inc.
 
 MTK_PLATFORM := isp4_t
-MTK_SENSOR_PROJECT :=
+MTK_SENSOR_PROJECT := selene
 COMMON_VERSION := v1
 IMGSENSOR_DRIVER_PATH  := $(DEVICE_MODULES_PATH)/drivers/misc/mediatek/imgsensor/src
 MTK_PLATFORM_KO := imgsensor_$(MTK_PLATFORM)
@@ -87,11 +87,6 @@ endif
 ifeq (,$(wildcard $(IMGSENSOR_DRIVER_PATH)/$(MTK_PLATFORM)/camera_project/$(MTK_SENSOR_PROJECT)/camera_hw))
 subdir-ccflags-y += -I$(IMGSENSOR_DRIVER_PATH)/$(MTK_PLATFORM)/camera_hw
 $(eval $(call add_subdrv,camera_hw))
-
-ifneq ($(project_drv),)
-$(eval $(call add_subdrv,camera_project/$(MTK_SENSOR_PROJECT)/camera_hw))
-endif
-
 else
 $(eval $(call add_subdrv,camera_project/$(MTK_SENSOR_PROJECT)/camera_hw))
 subdir-ccflags-y += -I$(IMGSENSOR_DRIVER_PATH)/$(MTK_PLATFORM)/camera_project/$(MTK_SENSOR_PROJECT)/camera_hw
