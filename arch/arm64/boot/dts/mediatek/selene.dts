@@ -198,6 +198,7 @@
 };
 
 &goodix_fp {
+	compatible = "mediatek,fpc1022_irq", "mediatek,goodix-fp";
 	fpc,gpio_irq = <&pio 8 0>;
 	pinctrl-names = "default", "reset_high", "reset_low", "spi_mode";
 	pinctrl-0 = <&fingerprint_default>;
