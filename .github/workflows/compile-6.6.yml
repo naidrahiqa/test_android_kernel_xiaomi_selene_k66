@@ -29,7 +29,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             bc bison build-essential cpio dwarves flex \
             gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-            libelf-dev libssl-dev lz4 perl python3 rsync wget zstd
+            kmod libelf-dev libssl-dev lz4 perl python3 rsync wget zstd
 
       - name: Cache Greenforce Clang
         id: cache-clang
@@ -129,6 +129,154 @@ jobs:
         run: |
           find kernel_device_modules-6.6 -name '*.ko' | sort | tee logs/built_ko.txt || true
 
+      - name: Package Selene images, dtbo.img, and stripped modules
+        run: |
+          set -o pipefail
+          KVER="$(cat out/include/config/kernel.release)"
+          echo "Kernel release: ${KVER}"
+
+          rm -rf staging dist
+          mkdir -p staging dist/dtb dist/gki_modules dist/vendor_dlkm/lib/modules dist/meta
+
+          cp out/arch/arm64/boot/Image dist/Image
+          gzip -n -k -c dist/Image > dist/Image.gz
+          cp out/dts_verify/mt6768.dtb dist/dtb/mt6768.dtb
+          cp out/dts_verify/selene.dtbo dist/dtb/selene.dtbo
+          cat dist/Image.gz dist/dtb/mt6768.dtb > dist/Image.gz-dtb
+
+          python3 - <<'PY'
+          import os, struct
+
+          dtbo_path = "dist/dtb/selene.dtbo"
+          out_path = "dist/dtbo.img"
+          data = open(dtbo_path, "rb").read()
+          page_size = 2048
+          hdr_sz = 32
+          ent_sz = 32
+          dt_offset = hdr_sz + ent_sz
+          aligned_dt_len = ((len(data) + 3) // 4) * 4
+          padded_data = data + b"\x00" * (aligned_dt_len - len(data))
+          total_size = dt_offset + len(padded_data)
+
+          # Android dt_table_header & dt_table_entry (version 0, big-endian)
+          header = struct.pack(">8I", 0xd7b7ab1e, total_size, hdr_sz, ent_sz, 1, hdr_sz, page_size, 0)
+          entry = struct.pack(">8I", len(data), dt_offset, 0, 0, 0, 0, 0, 0)
+          with open(out_path, "wb") as f:
+              f.write(header + entry + padded_data)
+          print(f"Created {out_path} ({os.path.getsize(out_path)} bytes, dtbo={len(data)} bytes)")
+          PY
+
+          make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
+            DEVICE_MODULES_REL_DIR=../kernel_device_modules-6.6 \
+            INSTALL_MOD_PATH="${GITHUB_WORKSPACE}/staging" \
+            INSTALL_MOD_STRIP=1 \
+            modules_install 2>&1 | tee logs/base_modules_install.log
+
+          make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
+            DEVICE_MODULES_PATH="${GITHUB_WORKSPACE}/kernel_device_modules-6.6" \
+            DEVICE_MODULES_REL_DIR=../kernel_device_modules-6.6 \
+            DEVCIE_MODULES_INCLUDE="-I${GITHUB_WORKSPACE}/kernel_device_modules-6.6/include" \
+            M=../kernel_device_modules-6.6 \
+            INSTALL_MOD_PATH="${GITHUB_WORKSPACE}/staging" \
+            INSTALL_MOD_STRIP=1 \
+            modules_install 2>&1 | tee logs/oot_modules_install.log
+
+          depmod -b "${GITHUB_WORKSPACE}/staging" "${KVER}"
+
+          MOD_ROOT="${GITHUB_WORKSPACE}/staging/lib/modules/${KVER}"
+          python3 - "${MOD_ROOT}" "${GITHUB_WORKSPACE}/dist" <<'PY'
+          import os, shutil, sys
+
+          mod_root, dist_dir = sys.argv[1], sys.argv[2]
+          gki_dst = os.path.join(dist_dir, "gki_modules")
+          oot_dst = os.path.join(dist_dir, "vendor_dlkm", "lib", "modules")
+
+          oot_names = set()
+          gki_count = 0
+          oot_count = 0
+          for dirpath, _, filenames in os.walk(mod_root):
+              rel_dir = os.path.relpath(dirpath, mod_root)
+              for fn in filenames:
+                  if not fn.endswith(".ko"):
+                      continue
+                  src = os.path.join(dirpath, fn)
+                  if rel_dir == "kernel" or rel_dir.startswith("kernel" + os.sep):
+                      shutil.copy2(src, os.path.join(gki_dst, fn))
+                      gki_count += 1
+                  else:
+                      shutil.copy2(src, os.path.join(oot_dst, fn))
+                      oot_names.add(fn)
+                      oot_count += 1
+
+          # Build flat vendor_dlkm modules.order / modules.load / modules.dep
+          order_lines = []
+          for order_file in ("modules.order",):
+              p = os.path.join(mod_root, order_file)
+              if os.path.exists(p):
+                  for line in open(p):
+                      base = os.path.basename(line.strip())
+                      if base in oot_names and base not in order_lines:
+                          order_lines.append(base)
+          for extra in sorted(oot_names - set(order_lines)):
+              order_lines.append(extra)
+
+          with open(os.path.join(oot_dst, "modules.order"), "w") as f:
+              for m in order_lines:
+                  f.write(m + "\n")
+          with open(os.path.join(oot_dst, "modules.load"), "w") as f:
+              for m in order_lines:
+                  f.write(m + "\n")
+
+          dep_src = os.path.join(mod_root, "modules.dep")
+          if os.path.exists(dep_src):
+              with open(os.path.join(oot_dst, "modules.dep"), "w") as out_f:
+                  for line in open(dep_src):
+                      mod_path, _, deps = line.strip().partition(":")
+                      mod_base = os.path.basename(mod_path.strip())
+                      if mod_base in oot_names:
+                          flat_deps = " ".join(os.path.basename(d) for d in deps.split() if d)
+                          out_f.write(f"{mod_base}:{(' ' + flat_deps) if flat_deps else ''}\n")
+
+          for meta_fn in ("modules.alias", "modules.softdep", "modules.builtin", "modules.builtin.modinfo"):
+              src = os.path.join(mod_root, meta_fn)
+              if os.path.exists(src):
+                  shutil.copy2(src, os.path.join(oot_dst, meta_fn))
+
+          required_selene = [
+              "hqsysfs.ko", "hqsys_misc.ko", "hqsys_pcba.ko",
+              "smb1351_charger.ko", "ocp2131_bias.ko",
+              "panel-k19a-36-02-0a-dsc-vdo.ko",
+              "panel-k19a-43-02-0b-dsc-vdo.ko",
+              "panel-k19a-36-03-0c-dsc-vdo.ko",
+              "flashlights-led191.ko",
+              "nt36672c_spi.ko", "focaltech_spi.ko",
+              "snd-soc-aw87559.ko",
+              "fusb302.ko", "tcpc_fusb303.ko",
+              "gf_spi_tee.ko", "fpc1022_tee.ko",
+              "pn553-19a.ko",
+          ]
+          missing = [m for m in required_selene if m not in oot_names]
+          assert not missing, f"Missing Selene modules in vendor_dlkm: {missing}"
+          print(f"Packaged GKI={gki_count} .ko, vendor_dlkm={oot_count} .ko (all 17 Selene modules verified)")
+          PY
+
+          cp out/.config dist/meta/config
+          cp out/Module.symvers dist/meta/vmlinux.Module.symvers
+          cp kernel_device_modules-6.6/Module.symvers dist/meta/oot.Module.symvers
+          cp logs/built_ko.txt dist/meta/built_ko.txt
+          {
+            echo "kernel_release=${KVER}"
+            echo "selene_commit=${GITHUB_SHA}"
+            echo "module_sig_check=$(tail -c 40 dist/vendor_dlkm/lib/modules/smb1351_charger.ko | tr -dc '[:print:]')"
+          } > dist/meta/BUILD_INFO.txt
+          (cd dist && find . -type f ! -name SHA256SUMS | sort | xargs sha256sum > SHA256SUMS)
+          ls -lh dist/ dist/dtb/ dist/meta/
+          du -sh dist/ dist/vendor_dlkm/ dist/gki_modules/
+
       - name: Upload build logs and DTBs
         if: always()
         uses: actions/upload-artifact@v4
@@ -138,3 +286,10 @@ jobs:
             logs/
             out/dts_verify/
           if-no-files-found: ignore
+
+      - name: Upload packaged Selene kernel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: selene-k66-package
+          path: dist/
+          retention-days: 14
