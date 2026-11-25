@@ -68,7 +68,7 @@ aliases {
 		mtk_leds: mtk_leds {
 			backlight {
 				label = "lcd-backlight";
-#if IS_ENABLED(CONFIG_MATCH_XIAOMI)
+#if defined(CONFIG_MATCH_XIAOMI) || defined(CONFIG_MATCH_XIAOMI_MODULE)
 				max-brightness = <2047>;
 				max-hw-brightness = <2047>;
 #else

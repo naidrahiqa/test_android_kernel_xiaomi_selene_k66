@@ -75,6 +75,9 @@
 	compatible = "mediatek,disp-leds";
 	backlight {
 		led_mode = <4>;
+		max-brightness = <2047>;
+		max-hw-brightness = <2047>;
+		min-hw-brightness = <4>;
 	};
 };
 
