@@ -218,7 +218,7 @@ static ssize_t nvt_max_power_switch_proc_write(struct file *filp, const char __u
 	int32_t ret;
 	int32_t tmp;
 	uint8_t max_power_switch;
-	char *tmp_buf;
+	char *tmp_buf = NULL;
 
 	NVT_LOG("++\n");
 
@@ -1169,7 +1169,7 @@ static ssize_t nvt_pf_switch_proc_write(struct file *filp, const char __user *bu
 	int32_t ret;
 	int32_t tmp;
 	uint8_t pf_switch;
-	char *tmp_buf;
+	char *tmp_buf = NULL;
 
 	NVT_LOG("++\n");
 
@@ -1352,7 +1352,7 @@ static ssize_t nvt_sensitivity_switch_proc_write(struct file *filp, const char _
 	int32_t ret;
 	int32_t tmp;
 	uint8_t sensitivity_switch;
-	char *tmp_buf;
+	char *tmp_buf = NULL;
 
 	NVT_LOG("++\n");
 
@@ -1761,7 +1761,7 @@ static ssize_t nvt_charger_switch_proc_write(struct file *filp, const char __use
 	int32_t ret;
 	int32_t tmp;
 	uint8_t charger_switch;
-	char *tmp_buf;
+	char *tmp_buf = NULL;
 
 	NVT_LOG("++\n");
 
@@ -2020,7 +2020,7 @@ static ssize_t nvt_pocket_palm_switch_proc_write(struct file *filp, const char _
 	int32_t ret;
 	int32_t tmp;
 	uint8_t pocket_palm_switch;
-	char *tmp_buf;
+	char *tmp_buf = NULL;
 
 	NVT_LOG("++\n");
 
