@@ -493,7 +493,7 @@ static void write_shutter(kal_uint64 shutter)
 	write_cmos_sensor(0x3502, (shutter)  & 0xFF);
 	// write_cmos_sensor(0x3208, 0x10);
 	// write_cmos_sensor(0x3208, 0xa0);
-	LOG_DBG("shutter =%d, framelength =%d, realtime_fps =%d\n",
+	LOG_DBG("shutter =%llu, framelength =%d, realtime_fps =%d\n",
 		shutter, imgsensor.frame_length, realtime_fps);
 }
 
@@ -5202,7 +5202,8 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 				imgsensor_info.hs_video.mipi_pixel_rate;
 		break;
 		case MSDK_SCENARIO_ID_CUSTOM1:
-			imgsensor_info.custom1.mipi_pixel_rate;
+			*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) =
+				imgsensor_info.custom1.mipi_pixel_rate;
 		break;
 		case MSDK_SCENARIO_ID_SLIM_VIDEO:
 			*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) =

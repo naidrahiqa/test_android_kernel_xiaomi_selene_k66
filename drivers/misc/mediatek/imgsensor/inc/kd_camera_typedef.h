@@ -16,9 +16,11 @@
 #define kal_int8 signed char
 #define kal_int16 signed short
 #define kal_int32 signed int
+#define kal_int64 long long
 #define kal_uint8 unsigned char
 #define kal_uint16 unsigned short
 #define kal_uint32 unsigned int
+#define kal_uint64 unsigned long long
 
 
 

@@ -834,7 +834,7 @@ static void gc02m1_read_otp(void)
 		write_cmos_sensor(0xf3, 0x34);
 		otp_info[i] = read_cmos_sensor(0x19);
 		otp_data[i] = otp_info[i];
-		LOG_INF("otp_info2[%d] = %x otp_info[%d] = %x\n", i, otp_info[i],otp_data[i]);
+		LOG_INF("otp_info2[%d] = %x otp_data[%d] = %x\n", i, otp_info[i], i, otp_data[i]);
 	}
 
 	write_cmos_sensor(0xf7, 0x00);

@@ -481,7 +481,7 @@ static void set_shutter(kal_uint64 shutter)
 	kal_uint16 realtime_fps = 0;
 	kal_uint64 pre_shutter = 2877;
 	kal_uint16 shutter_length = 0;
-	LOG_DBG("enter  shutter = %d\n", shutter);
+	LOG_DBG("enter  shutter = %llu\n", shutter);
 
 	spin_lock_irqsave(&imgsensor_drv_lock, flags);
 	imgsensor.shutter = shutter;
@@ -547,7 +547,7 @@ static void set_shutter(kal_uint64 shutter)
 		write_cmos_sensor(0X0202, shutter & 0xFFFF);
 
 	} else {
-		LOG_INF("enter long shutter = %d\n",shutter);
+		LOG_INF("enter long shutter = %llu\n",shutter);
 		bNeedSetNormalMode = KAL_TRUE;
 		imgsensor.ae_frm_mode.frame_mode_1 = IMGSENSOR_AE_MODE_SE;
 		imgsensor.ae_frm_mode.frame_mode_2 = IMGSENSOR_AE_MODE_SE;
@@ -613,7 +613,7 @@ static void set_shutter(kal_uint64 shutter)
 		pre_shutter = 0;
 	}
 
-	LOG_DBG("Exit! shutter =%d, framelength =%d\n", shutter,
+	LOG_DBG("Exit! shutter =%llu, framelength =%d\n", shutter,
 			imgsensor.frame_length);
 }
 
@@ -3714,7 +3714,8 @@ switch (*feature_data) {
 				imgsensor_info.hs_video.mipi_pixel_rate;
 		break;
 		case MSDK_SCENARIO_ID_CUSTOM1:
-			imgsensor_info.custom1.mipi_pixel_rate;
+			*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) =
+				imgsensor_info.custom1.mipi_pixel_rate;
 		break;
 		case MSDK_SCENARIO_ID_SLIM_VIDEO:
 			*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) =

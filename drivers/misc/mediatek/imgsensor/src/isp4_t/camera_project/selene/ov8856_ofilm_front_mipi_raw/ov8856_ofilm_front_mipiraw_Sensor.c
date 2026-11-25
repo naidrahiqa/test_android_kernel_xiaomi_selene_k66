@@ -343,7 +343,7 @@ static void set_shutter(kal_uint64 shutter)
 	if (shutter < 32000) {
 
 		if (bNeedSetNormalMode) {
-			LOG_INF("LZM 1111 exit long shutter = %d\n", shutter);
+			LOG_INF("LZM 1111 exit long shutter = %llu\n", shutter);
 			//write_cmos_sensor(0x0100, 0x00);
 			write_cmos_sensor(0x0303, 0x01);
 			write_cmos_sensor(0x030f, 0x04);
@@ -403,9 +403,9 @@ static void set_shutter(kal_uint64 shutter)
 	write_cmos_sensor(0x3501, (shutter >> 4) & 0xFF);
 	write_cmos_sensor(0x3500, (shutter >> 12) & 0x0F);
 	//write_cmos_sensor(0x0100, 0x01);
-	LOG_DBG("Exit! shutter =%d, framelength =%d, realtime_fps =%d \n", shutter, imgsensor.frame_length, realtime_fps);
+	LOG_DBG("Exit! shutter =%llu, framelength =%d, realtime_fps =%d \n", shutter, imgsensor.frame_length, realtime_fps);
 	} else{
-		LOG_INF("ZT Enter Long Exposure shutter:%d ", shutter);
+		LOG_INF("ZT Enter Long Exposure shutter:%llu ", shutter);
 		bNeedSetNormalMode = KAL_TRUE;
 		imgsensor.ae_frm_mode.frame_mode_1 = IMGSENSOR_AE_MODE_SE;
 		imgsensor.ae_frm_mode.frame_mode_2 = IMGSENSOR_AE_MODE_SE;
@@ -659,7 +659,7 @@ static void set_shutter(kal_uint64 shutter)
 				value_4837 = 0X2c;
 				break;
 			default:
-			LOG_INF("LZM ERROR! Shutter = %d, does not match any values!", shutter);
+			LOG_INF("LZM ERROR! Shutter = %llu, does not match any values!", shutter);
 
 	}
 
@@ -684,7 +684,7 @@ static void set_shutter(kal_uint64 shutter)
 	write_cmos_sensor(0X5789, 0xf5);
 	write_cmos_sensor(0X578a, 0xf5);
 	//write_cmos_sensor(0X0100, 0x01);
-	LOG_INF("ZT Exit Long Exposure shutter:%d 2020-04-20 ", shutter);
+	LOG_INF("ZT Exit Long Exposure shutter:%llu 2020-04-20 ", shutter);
 	}
 
 }
