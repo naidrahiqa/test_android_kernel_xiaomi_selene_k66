@@ -185,10 +185,10 @@ static void nqx_enable_irq(struct nqx_dev *nqx_dev)
 	unsigned long flags;
 	debug(" Entry\n");
 	spin_lock_irqsave(&nqx_dev->irq_enabled_lock, flags);
-	//if (!nqx_dev->irq_enabled) {
+	if (!nqx_dev->irq_enabled) {
 		nqx_dev->irq_enabled = true;
 		enable_irq(nqx_dev->client->irq);
-	//}
+	}
 	spin_unlock_irqrestore(&nqx_dev->irq_enabled_lock, flags);
 }
 
@@ -262,10 +262,7 @@ static ssize_t nfc_read(struct file *filp, char __user *buf,
 		}
 		while (1) {
 			ret = 0;
-			if (!nqx_dev->irq_enabled) {
-				nqx_dev->irq_enabled = true;
-				enable_irq(nqx_dev->client->irq);
-			}
+			nqx_enable_irq(nqx_dev);
 			if (!gpio_get_value(nqx_dev->irq_gpio)) {
 				ret = wait_event_interruptible(nqx_dev->read_wq,
 					!nqx_dev->irq_enabled);
