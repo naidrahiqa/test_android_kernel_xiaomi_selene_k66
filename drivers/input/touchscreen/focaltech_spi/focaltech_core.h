@@ -118,7 +118,9 @@
 #define FTS_SIZE_DEFAULT						15
 #define FTS_TP_ADD							  1
 #define FOCAL_LOCKDOWN							1
+#if FTS_TEST_EN
 #define FTS_TP_DATA_DUMP_EN                     //create procfs /proc/tp_data_dump
+#endif
 #if FOCAL_LOCKDOWN
 #define TP_LOCKDOWN_INFO "tp_lockdown_info"
 int fts_palm_sensor_cmd(int);
