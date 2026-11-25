@@ -7,6 +7,11 @@
 
 #include "inc/alsps.h"
 #include "inc/aal_control.h"
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+#include <linux/gpio.h>
+#include <linux/of.h>
+#include <linux/of_gpio.h>
+#endif
 struct alsps_context *alsps_context_obj /* = NULL*/;
 struct platform_device *pltfm_dev;
 int last_als_report_data = -1;
@@ -1294,9 +1299,61 @@ int alsps_remove(void)
 }
 EXPORT_SYMBOL_GPL(alsps_remove);
 
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+static int alsps_ldoen_gpio = -EINVAL;
+
+static void alsps_ldo_en_init(void)
+{
+	struct device_node *np;
+	const char *prop = "ldoen-gpios";
+	int gpio;
+	int ret;
+
+	np = of_find_compatible_node(NULL, NULL, "mediatek,alsps-ldoen");
+	if (!np) {
+		np = of_find_compatible_node(NULL, NULL,
+					     "mediatek,alsps_ldo_enable");
+		prop = "alsps,ldoen_gpio";
+	}
+	if (!np)
+		return;
+
+	gpio = of_get_named_gpio(np, prop, 0);
+	of_node_put(np);
+	if (!gpio_is_valid(gpio))
+		return;
+
+	ret = gpio_request(gpio, "alsps_gpio_ldoen_pin");
+	if (ret) {
+		pr_err("alsps ldoen gpio_request(%d) failed: %d\n", gpio, ret);
+		return;
+	}
+	ret = gpio_direction_output(gpio, 1);
+	if (ret) {
+		pr_err("alsps ldoen gpio_direction_output(%d) failed: %d\n",
+		       gpio, ret);
+		gpio_free(gpio);
+		return;
+	}
+	alsps_ldoen_gpio = gpio;
+}
+
+static void alsps_ldo_en_exit(void)
+{
+	if (gpio_is_valid(alsps_ldoen_gpio)) {
+		gpio_set_value(alsps_ldoen_gpio, 0);
+		gpio_free(alsps_ldoen_gpio);
+		alsps_ldoen_gpio = -EINVAL;
+	}
+}
+#endif
+
 static int __init alsps_init(void)
 {
 	pr_debug("%s\n", __func__);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	alsps_ldo_en_init();
+#endif
 	AAL_init();
 	return 0;
 }
@@ -1304,6 +1361,9 @@ static int __init alsps_init(void)
 static void __exit alsps_exit(void)
 {
 	pr_debug("%s\n", __func__);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	alsps_ldo_en_exit();
+#endif
 	AAL_exit();
 }
 

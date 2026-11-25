@@ -118,6 +118,16 @@ EXPORT_SYMBOL_GPL(sensor_attr_deregister);
  *}
  */
 
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+static ssize_t architecture_show(const struct class *class,
+				 const struct class_attribute *attr,
+				 char *buf)
+{
+	return scnprintf(buf, PAGE_SIZE, "MTK:1.0\n");
+}
+static CLASS_ATTR_RO(architecture);
+#endif
+
 int __init sensor_attr_init(void)
 {
 	int err;
@@ -128,6 +138,14 @@ int __init sensor_attr_init(void)
 		err = -EIO;
 		return err;
 	}
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	err = class_create_file(sensor_attr_class, &class_attr_architecture);
+	if (err) {
+		pr_err("fail to create architecture class file\n");
+		class_destroy(sensor_attr_class);
+		return err;
+	}
+#endif
 	sensor_attr_major = register_chrdev(0, "sensor", &sensor_attr_fops);
 	if (sensor_attr_major < 0)
 		goto fail_printk;
@@ -136,6 +154,9 @@ int __init sensor_attr_init(void)
 
 fail_printk:
 	pr_err("unable to get major %d for misc devices\n", sensor_attr_major);
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	class_remove_file(sensor_attr_class, &class_attr_architecture);
+#endif
 	class_destroy(sensor_attr_class);
 	return err;
 }
@@ -143,6 +164,9 @@ fail_printk:
 void __exit sensor_attr_exit(void)
 {
 	unregister_chrdev(sensor_attr_major, "sensor");
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	class_remove_file(sensor_attr_class, &class_attr_architecture);
+#endif
 	class_destroy(sensor_attr_class);
 }
 

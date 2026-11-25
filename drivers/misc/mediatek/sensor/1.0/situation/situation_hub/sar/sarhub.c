@@ -18,6 +18,9 @@ static DEFINE_SPINLOCK(calibration_lock);
 struct sarhub_ipi_data {
 	bool factory_enable;
 
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	int32_t data_action_data_cpy[3];
+#endif
 	int32_t cali_data[3];
 	int8_t cali_status;
 	struct completion calibration_done;
@@ -53,6 +56,19 @@ static int sar_factory_enable_sensor(bool enabledisable,
 
 static int sar_factory_get_data(int32_t sensor_data[3])
 {
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	struct sarhub_ipi_data *obj = obj_ipi_data;
+
+	if (!obj)
+		return -EINVAL;
+
+	spin_lock(&calibration_lock);
+	sensor_data[0] = obj->data_action_data_cpy[0];
+	sensor_data[1] = obj->data_action_data_cpy[1];
+	sensor_data[2] = obj->data_action_data_cpy[2];
+	spin_unlock(&calibration_lock);
+	return 0;
+#else
 	int err = 0;
 	struct data_unit_t data;
 
@@ -66,6 +82,7 @@ static int sar_factory_get_data(int32_t sensor_data[3])
 	sensor_data[2] = data.sar_event.data[2];
 
 	return err;
+#endif
 }
 
 static int sar_factory_enable_calibration(void)
@@ -165,8 +182,23 @@ static int sar_recv_data(struct data_unit_t *event, void *reserved)
 		value[0] = event->sar_event.data[0];
 		value[1] = event->sar_event.data[1];
 		value[2] = event->sar_event.data[2];
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+		if (obj) {
+			spin_lock(&calibration_lock);
+			obj->data_action_data_cpy[0] = event->sar_event.data[0];
+			obj->data_action_data_cpy[1] = event->sar_event.data[1];
+			obj->data_action_data_cpy[2] = event->sar_event.data[2];
+			spin_unlock(&calibration_lock);
+		}
+#endif
 		err = sar_data_report_t(value, (int64_t)event->time_stamp);
 	} else if (event->flush_action == CALI_ACTION) {
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+		value[0] = event->sar_event.x_bias;
+		value[1] = event->sar_event.y_bias;
+		value[2] = event->sar_event.z_bias;
+		err = sar_cal_report_t(value, (int64_t)event->time_stamp);
+#endif
 		spin_lock(&calibration_lock);
 		obj->cali_data[0] =
 			event->sar_event.x_bias;
