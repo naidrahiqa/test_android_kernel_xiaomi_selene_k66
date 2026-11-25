@@ -51,6 +51,7 @@
 #include <linux/of_address.h>
 
 #include "gf_spi_tee.h"
+#include <linux/pinctrl/consumer.h>
 #include <linux/regulator/consumer.h>
 
 #define WAKELOCK_HOLD_TIME 500 /* in ms */
@@ -697,11 +698,8 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	* IOC_DIR is from the user perspective, while access_ok is
 	* from the kernel perspective; so they look reversed.
 	*/
-	if (_IOC_DIR(cmd) & _IOC_READ)
-		retval = !access_ok(VERIFY_WRITE, (void __user *)arg, _IOC_SIZE(cmd));
-
-	if (retval == 0 && _IOC_DIR(cmd) & _IOC_WRITE)
-		retval = !access_ok(VERIFY_READ, (void __user *)arg, _IOC_SIZE(cmd));
+	if (_IOC_DIR(cmd) & (_IOC_READ | _IOC_WRITE))
+		retval = !access_ok((void __user *)arg, _IOC_SIZE(cmd));
 
 	if (retval)
 		return -EINVAL;

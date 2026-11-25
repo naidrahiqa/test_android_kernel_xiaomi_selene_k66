@@ -45,6 +45,7 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 #include <linux/gpio.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/regulator/consumer.h>
 #include <linux/uaccess.h>
 #include <linux/firmware.h>
