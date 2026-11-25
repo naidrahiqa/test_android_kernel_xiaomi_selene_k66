@@ -157,6 +157,7 @@ int register_kboj_under_hqsysfs(struct kobject *kobj,
 	return kobject_init_and_add(kobj, ktype, &(huaqin_hw_device->kobj),
 				    "%s", fmt);
 }
+EXPORT_SYMBOL_GPL(register_kboj_under_hqsysfs);
 
 static int __init create_sysfs(void)
 {
@@ -347,15 +348,24 @@ static const struct proc_ops boot_reason_proc_ops = {
 	.proc_release = single_release,
 };
 
-static int __init get_boot_rease(char *str)
+static void hq_parse_boot_reason(void)
 {
-	if (strcmp("boot_with_factory", str) == 0) {
-		boot_into_factory = 1;
-	}
+	struct device_node *chosen;
+	const char *bootargs = NULL;
 
-	return 0;
+	chosen = of_find_node_by_path("/chosen");
+	if (!chosen)
+		chosen = of_find_node_by_path("/chosen@0");
+	if (!chosen)
+		return;
+
+	if (!of_property_read_string(chosen, "bootargs", &bootargs) &&
+	    bootargs &&
+	    strstr(bootargs, "androidboot.boot_reason=boot_with_factory"))
+		boot_into_factory = 1;
+
+	of_node_put(chosen);
 }
-__setup("androidboot.boot_reason=", get_boot_rease);
 
 
 static int sdc_detect_proc_show(struct seq_file *file, void *data)
@@ -391,6 +401,8 @@ static int sdc_detect_init(void)
 
 static int __init hq_harware_init(void)
 {
+	hq_parse_boot_reason();
+
 	/* create sysfs entry at /sys/class/huaqin/interface/hw_info */
 	create_sysfs();
 

@@ -2251,7 +2251,7 @@ static bool fts_detect_lcm_from_chosen(void)
 				fts_lockdown[i] = p[i];
 				i++;
 			}
-			fts_lockdown[i] = ' ';
+			fts_lockdown[i] = '\0';
 		}
 #endif
 		p = strstr(bootargs, "LCM_name=");

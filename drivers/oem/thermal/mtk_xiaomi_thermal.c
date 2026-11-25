@@ -126,6 +126,7 @@ int mtk_xiaomi_thermal_init(void)
 	}
 	return 0;
 }
+EXPORT_SYMBOL_GPL(mtk_xiaomi_thermal_init);
 
 void mtk_xiaomi_thermal_exit(void)
 {
@@ -136,3 +137,6 @@ void mtk_xiaomi_thermal_exit(void)
 	xiaomi_thermal_dev = NULL;
 	xiaomi_thermal_class = NULL;
 }
+EXPORT_SYMBOL_GPL(mtk_xiaomi_thermal_exit);
+
+MODULE_LICENSE("GPL");

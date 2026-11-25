@@ -76,6 +76,7 @@ enum huaqin_pcba_family get_huaqin_pcba_family(void)
 
 	return huaqin_pcba_family;
 }
+EXPORT_SYMBOL_GPL(get_huaqin_pcba_family);
 
 /* ------------------------------------------------------------------------- */
 /* Lancelot / J19                                                             */
@@ -402,10 +403,58 @@ static bool read_pcba_config_merlin(void)
 /* Common                                                                     */
 /* ------------------------------------------------------------------------- */
 
+static void hq_parse_cmdline_int(const char *bootargs, const char *key,
+				 int *out)
+{
+	const char *p = bootargs;
+	size_t key_len = strlen(key);
+	char buf[16];
+	size_t i = 0;
+
+	while ((p = strstr(p, key)) != NULL) {
+		if (p == bootargs || p[-1] == ' ' || p[-1] == '\t') {
+			p += key_len;
+			while (i < sizeof(buf) - 1 &&
+			       (p[i] == '-' || (p[i] >= '0' && p[i] <= '9'))) {
+				buf[i] = p[i];
+				i++;
+			}
+			if (i) {
+				buf[i] = '\0';
+				if (!kstrtoint(buf, 10, out))
+					pr_info("[hqsysfs] %s%d\n", key, *out);
+			}
+			return;
+		}
+		p += key_len;
+	}
+}
+
+static void hq_parse_pcba_bootargs(void)
+{
+	struct device_node *chosen;
+	const char *bootargs = NULL;
+
+	chosen = of_find_node_by_path("/chosen");
+	if (!chosen)
+		chosen = of_find_node_by_path("/chosen@0");
+	if (!chosen)
+		return;
+
+	if (!of_property_read_string(chosen, "bootargs", &bootargs) && bootargs) {
+		hq_parse_cmdline_int(bootargs, "pcba_config=", &pcba_config_arg);
+		hq_parse_cmdline_int(bootargs, "pcba_stage=", &pcba_stage_arg);
+		hq_parse_cmdline_int(bootargs, "pcba_count=", &pcba_count_arg);
+	}
+	of_node_put(chosen);
+}
+
 static void hq_read_pcba_config(void)
 {
 	if (huaqin_pcba_config_read)
 		return;
+
+	hq_parse_pcba_bootargs();
 
 	switch (get_huaqin_pcba_family()) {
 	case PCBA_FAMILY_LANCELOT:
@@ -595,46 +644,11 @@ const char *get_huaqin_pcba_name(void)
 		return pcba_lookup(pcba_merlin, ARRAY_SIZE(pcba_merlin), config);
 	}
 }
+EXPORT_SYMBOL_GPL(get_huaqin_pcba_name);
 
 /* ------------------------------------------------------------------------- */
 /* Setup / drivers                                                            */
 /* ------------------------------------------------------------------------- */
-
-static int __init hq_pcba_config_setup(char *p)
-{
-	if (kstrtoint(p, 10, &pcba_config_arg)) {
-		pr_err("[%s]: invalid pcba_config: %s\n", __func__, p);
-		return -EINVAL;
-	}
-
-	pr_info("[%s]: pcba_config = %d\n", __func__, pcba_config_arg);
-	return 0;
-}
-early_param("pcba_config", hq_pcba_config_setup);
-
-static int __init hq_pcba_stage_setup(char *p)
-{
-	if (kstrtoint(p, 10, &pcba_stage_arg)) {
-		pr_err("[%s]: invalid pcba_stage: %s\n", __func__, p);
-		return -EINVAL;
-	}
-
-	pr_info("[%s]: pcba_stage = %d\n", __func__, pcba_stage_arg);
-	return 0;
-}
-early_param("pcba_stage", hq_pcba_stage_setup);
-
-static int __init hq_pcba_count_setup(char *p)
-{
-	if (kstrtoint(p, 10, &pcba_count_arg)) {
-		pr_err("[%s]: invalid pcba_count: %s\n", __func__, p);
-		return -EINVAL;
-	}
-
-	pr_info("[%s]: pcba_count = %d\n", __func__, pcba_count_arg);
-	return 0;
-}
-early_param("pcba_count", hq_pcba_count_setup);
 
 static int hq_board_id_probe(struct platform_device *pdev)
 {
