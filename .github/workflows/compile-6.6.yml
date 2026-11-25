@@ -36,20 +36,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: greenforce-clang
-          key: greenforce-clang-latest-v1
+          key: greenforce-clang-latest-v2
 
       - name: Setup Greenforce Clang
         run: |
           if [ "${{ steps.cache-clang.outputs.cache-hit }}" != "true" ]; then
-            mkdir -p greenforce-clang
-            cd greenforce-clang
+            rm -rf greenforce-clang
             wget -qO- https://raw.githubusercontent.com/greenforce-project/greenforce_clang/refs/heads/main/get_clang.sh | bash
           fi
-          echo "${GITHUB_WORKSPACE}/greenforce-clang/bin" >> "$GITHUB_PATH"
+          CLANG_BIN_DIR="$(dirname "$(find "${GITHUB_WORKSPACE}/greenforce-clang" -name clang -type f,l | head -n1)")"
+          echo "Using clang bin dir: ${CLANG_BIN_DIR}"
+          "${CLANG_BIN_DIR}/clang" --version
+          "${CLANG_BIN_DIR}/ld.lld" --version
+          echo "${CLANG_BIN_DIR}" >> "$GITHUB_PATH"
 
       - name: Configure kernel + Selene overlays
         run: |
+          set -o pipefail
           mkdir -p out logs
+          which clang ld.lld
           clang --version
 
           make -C kernel-6.6 O="${PWD}/out" ARCH=arm64 LLVM=1 LLVM_IAS=1 \
