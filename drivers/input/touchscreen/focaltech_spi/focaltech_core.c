@@ -1482,188 +1482,33 @@ static void fts_resume_work(struct work_struct *work)
 	fts_ts_resume(ts_data->dev);
 }
 
-#if defined(CONFIG_FB)
-static int fb_notifier_callback(struct notifier_block *self,
-								unsigned long event, void *data)
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK_V2)
+static int fts_disp_notifier_callback(struct notifier_block *self,
+				      unsigned long event, void *data)
 {
-	struct fb_event *evdata = data;
-	int *blank = NULL;
+	int *blank = (int *)data;
 	struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
-								  fb_notif);
+						   disp_notifier);
 
-	if (!evdata) {
-		FTS_ERROR("evdata is null");
+	if (!blank)
 		return 0;
-	}
 
-	if (!(event == FB_EARLY_EVENT_BLANK || event == FB_EVENT_BLANK)) {
-		FTS_INFO("event(%lu) do not need process\n", event);
-		return 0;
-	}
-
-	blank = evdata->data;
-	FTS_INFO("FB event:%lu,blank:%d", event, *blank);
-	switch (*blank) {
-	case FB_BLANK_UNBLANK:
-		if (FB_EARLY_EVENT_BLANK == event) {
-			FTS_INFO("resume: event = %lu, not care\n", event);
-		} else if (FB_EVENT_BLANK == event) {
-			queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
-		}
-		break;
-	case FB_BLANK_POWERDOWN:
-		if (FB_EARLY_EVENT_BLANK == event) {
-			cancel_work_sync(&fts_data->resume_work);
-			fts_ts_suspend(ts_data->dev);
-		} else if (FB_EVENT_BLANK == event) {
-			FTS_INFO("suspend: event = %lu, not care\n", event);
-		}
-		break;
-	default:
-		FTS_INFO("FB BLANK(%d) do not need process\n", *blank);
-		break;
+	if (event == MTK_DISP_EARLY_EVENT_BLANK &&
+	    *blank == MTK_DISP_BLANK_POWERDOWN) {
+		FTS_INFO("suspend: event=%lu, blank=%d", event, *blank);
+		if (ts_data->ts_workqueue)
+			cancel_work_sync(&ts_data->resume_work);
+		fts_ts_suspend(ts_data->dev);
+	} else if (event == MTK_DISP_EVENT_BLANK &&
+		   *blank == MTK_DISP_BLANK_UNBLANK) {
+		FTS_INFO("resume: event=%lu, blank=%d", event, *blank);
+		if (ts_data->ts_workqueue)
+			queue_work(ts_data->ts_workqueue, &ts_data->resume_work);
+		else
+			fts_ts_resume(ts_data->dev);
 	}
 
 	return 0;
-}
-#elif defined(CONFIG_DRM)
-#if defined(CONFIG_DRM_PANEL)
-static struct drm_panel *active_panel;
-
-/*static int drm_check_dt(struct device_node *np)
-{
-	int i = 0;
-	int count = 0;
-	struct device_node *node = NULL;
-	struct drm_panel *panel = NULL;
-
-	count = of_count_phandle_with_args(np, "panel", NULL);
-	if (count <= 0) {
-		FTS_ERROR("find drm_panel count(%d) fail", count);
-		return -ENODEV;
-	}
-
-	for (i = 0; i < count; i++) {
-		node = of_parse_phandle(np, "panel", i);
-		panel = of_drm_find_panel(node);
-		of_node_put(node);
-		if (!IS_ERR(panel)) {
-			FTS_INFO("find drm_panel successfully");
-			active_panel = panel;
-			return 0;
-		}
-	}
-
-	FTS_ERROR("no find drm_panel");
-	return -ENODEV;
-}*/
-
-static int drm_notifier_callback(struct notifier_block *self,
-								 unsigned long event, void *data)
-{
-	struct msm_drm_notifier *evdata = data;
-	int *blank = NULL;
-	struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
-								  fb_notif);
-
-	if (!evdata) {
-		FTS_ERROR("evdata is null");
-		return 0;
-	}
-
-	if (!((event == DRM_PANEL_EARLY_EVENT_BLANK)
-		  || (event == DRM_PANEL_EVENT_BLANK))) {
-		FTS_INFO("event(%lu) do not need process\n", event);
-		return 0;
-	}
-
-	blank = evdata->data;
-	FTS_INFO("DRM event:%lu,blank:%d", event, *blank);
-	switch (*blank) {
-	case DRM_PANEL_BLANK_UNBLANK:
-		if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-			FTS_INFO("resume: event = %lu, not care\n", event);
-		} else if (DRM_PANEL_EVENT_BLANK == event) {
-			queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
-		}
-		break;
-	case DRM_PANEL_BLANK_POWERDOWN:
-		if (DRM_PANEL_EARLY_EVENT_BLANK == event) {
-			cancel_work_sync(&fts_data->resume_work);
-			fts_ts_suspend(ts_data->dev);
-		} else if (DRM_PANEL_EVENT_BLANK == event) {
-			FTS_INFO("suspend: event = %lu, not care\n", event);
-		}
-		break;
-	default:
-		FTS_INFO("DRM BLANK(%d) do not need process\n", *blank);
-		break;
-	}
-
-	return 0;
-}
-#else
-static int drm_notifier_callback(struct notifier_block *self,
-								 unsigned long event, void *data)
-{
-	struct msm_drm_notifier *evdata = data;
-	int *blank = NULL;
-	struct fts_ts_data *ts_data = container_of(self, struct fts_ts_data,
-								  fb_notif);
-
-	if (!evdata) {
-		FTS_ERROR("evdata is null");
-		return 0;
-	}
-
-	if (!((event == MSM_DRM_EARLY_EVENT_BLANK)
-		  || (event == MSM_DRM_EVENT_BLANK))) {
-		FTS_INFO("event(%lu) do not need process\n", event);
-		return 0;
-	}
-
-	blank = evdata->data;
-	FTS_INFO("DRM event:%lu,blank:%d", event, *blank);
-	switch (*blank) {
-	case MSM_DRM_BLANK_UNBLANK:
-		if (MSM_DRM_EARLY_EVENT_BLANK == event) {
-			FTS_INFO("resume: event = %lu, not care\n", event);
-		} else if (MSM_DRM_EVENT_BLANK == event) {
-			queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
-		}
-		break;
-	case MSM_DRM_BLANK_POWERDOWN:
-		if (MSM_DRM_EARLY_EVENT_BLANK == event) {
-			cancel_work_sync(&fts_data->resume_work);
-			fts_ts_suspend(ts_data->dev);
-		} else if (MSM_DRM_EVENT_BLANK == event) {
-			FTS_INFO("suspend: event = %lu, not care\n", event);
-		}
-		break;
-	default:
-		FTS_INFO("DRM BLANK(%d) do not need process\n", *blank);
-		break;
-	}
-
-	return 0;
-}
-#endif
-#elif defined(CONFIG_HAS_EARLYSUSPEND)
-static void fts_ts_early_suspend(struct early_suspend *handler)
-{
-	struct fts_ts_data *ts_data = container_of(handler, struct fts_ts_data,
-								  early_suspend);
-
-	cancel_work_sync(&fts_data->resume_work);
-	fts_ts_suspend(ts_data->dev);
-}
-
-static void fts_ts_late_resume(struct early_suspend *handler)
-{
-	struct fts_ts_data *ts_data = container_of(handler, struct fts_ts_data,
-								  early_suspend);
-
-	queue_work(fts_data->ts_workqueue, &fts_data->resume_work);
 }
 #endif
 
@@ -1936,13 +1781,15 @@ static int fts_ts_remove_entry(struct fts_ts_data *ts_data)
 	input_unregister_device(ts_data->pen_dev);
 #endif
 
-	if (ts_data->ts_workqueue)
-		destroy_workqueue(ts_data->ts_workqueue);
-
 #if IS_ENABLED(CONFIG_DRM_MEDIATEK_V2)
 	if (mtk_disp_notifier_unregister(&ts_data->disp_notifier))
 		FTS_ERROR("Error occurred while unregistering disp_notifier.");
 #endif
+
+	if (ts_data->ts_workqueue) {
+		cancel_work_sync(&ts_data->resume_work);
+		destroy_workqueue(ts_data->ts_workqueue);
+	}
 
 	if (gpio_is_valid(ts_data->pdata->reset_gpio))
 		gpio_free(ts_data->pdata->reset_gpio);
