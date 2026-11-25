@@ -2152,16 +2152,10 @@ static const struct dev_pm_ops fts_dev_pm_ops = {
 /*****************************************************************************
 * TP Driver
 *****************************************************************************/
-extern int is_nvt;
 static int fts_ts_probe(struct spi_device *spi)
 {
 	int ret = 0;
 	struct fts_ts_data *ts_data = NULL;
-
-	if(is_nvt){
-		FTS_ERROR("not fts\n");
-		return -1;
-	}
 
 	FTS_INFO("Touch Screen(SPI BUS) driver prboe...");
 	spi->mode = SPI_MODE_0;

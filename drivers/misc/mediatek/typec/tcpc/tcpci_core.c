@@ -43,6 +43,12 @@ static ssize_t tcpc_store_property(struct device *dev,
 struct class *tcpc_class;
 EXPORT_SYMBOL_GPL(tcpc_class);
 
+bool g_pd_is_present;
+EXPORT_SYMBOL_GPL(g_pd_is_present);
+
+uint8_t typec_cc_orientation;
+EXPORT_SYMBOL_GPL(typec_cc_orientation);
+
 static int bootmode;
 
 static struct device_type tcpc_dev_type;
