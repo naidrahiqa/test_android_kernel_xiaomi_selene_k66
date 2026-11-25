@@ -147,6 +147,40 @@ static void clk_buf_disp_ctrl(bool enable, struct mtk_dsi *dsi)
 	devm_pinctrl_put(pinctrll);
 }
 
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+static void bdg_selene_apply_panel_timing(void)
+{
+	struct device_node *chosen;
+	const char *bootargs = NULL;
+	const char *lcm = NULL;
+	bool is_43_02_0b = false;
+
+	chosen = of_find_node_by_path("/chosen");
+	if (!chosen)
+		chosen = of_find_node_by_path("/chosen@0");
+	if (chosen) {
+		if (!of_property_read_string(chosen, "bootargs", &bootargs) &&
+		    bootargs && strstr(bootargs, "43_02_0b"))
+			is_43_02_0b = true;
+		if (!is_43_02_0b &&
+		    !of_property_read_string(chosen, "atag,videolfb-lcmname", &lcm) &&
+		    lcm && strstr(lcm, "43_02_0b"))
+			is_43_02_0b = true;
+		of_node_put(chosen);
+	}
+
+	if (is_43_02_0b) {
+		bdg_mm_clk = 405;
+		bdg_rxtx_ratio = 232;
+	} else {
+		bdg_mm_clk = 270;
+		bdg_rxtx_ratio = 225;
+	}
+	DDPINFO("%s: selene bdg_mm_clk=%u bdg_rxtx_ratio=%u\n",
+		__func__, bdg_mm_clk, bdg_rxtx_ratio);
+}
+#endif
+
 static void bdg_config_init(struct device_node *node)
 {
 	int ret = 0;
@@ -206,6 +240,10 @@ static void bdg_config_init(struct device_node *node)
 		g_mode_enable = 1;
 		DDPINFO("%s: not find g-mode-enable, set as: %d!", __func__, g_mode_enable);
 	}
+
+#ifdef CONFIG_TARGET_PRODUCT_SELENE
+	bdg_selene_apply_panel_timing();
+#endif
 }
 
 bool is_bdg_supported(void)
