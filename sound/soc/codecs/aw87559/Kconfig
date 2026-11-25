@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Awinic AW87559 Smart K PA driver configuration
+#
+
+config SND_SOC_AW87559
+	tristate "Awinic AW87559 Smart K PA Driver"
+	depends on I2C
+	help
+	  Say Y or M here to enable support for the Awinic AW87559/AW87xxx
+	  dual-channel Smart K audio amplifier (as used on Xiaomi Selene).

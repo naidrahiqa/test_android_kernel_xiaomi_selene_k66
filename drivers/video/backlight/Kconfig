@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-2.0
+
+config BACKLIGHT_LM3697
+	tristate "TI LM3697 backlight for Selene"
+	depends on I2C
+	select REGMAP_I2C
+	help
+	  Enable the Selene-specific TI LM3697 external backlight controller.
+
+config BACKLIGHT_KTD3136
+	tristate "Kinetic KTD3136/KTD3137 backlight for Selene"
+	depends on I2C
+	select REGMAP_I2C
+	help
+	  Enable the Selene KTD3136/KTD3137-compatible external backlight
+	  controller.
+
+config BACKLIGHT_SGM37604A
+	tristate "SgMicro SGM37604A Backlight"
+	depends on I2C
+	help
+		Say Y here if you want to enable support for
+		the backlight IC SgMicro SGM37604A. The backlight
+		IC will send PWM to LED to control the brightness
+		of backlight.

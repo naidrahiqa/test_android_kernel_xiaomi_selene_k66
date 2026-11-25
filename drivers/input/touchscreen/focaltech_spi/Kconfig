@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# FocalTech FT8720 SPI touchscreen driver configuration
+#
+
+config TOUCHSCREEN_FOCALTECH_SPI
+	tristate "FocalTech FT8720 SPI touchscreen driver"
+	depends on SPI
+	help
+	  Say Y or M here if you have a FocalTech FT8720M touchscreen
+	  connected via SPI (as used on Xiaomi Selene / K19A).

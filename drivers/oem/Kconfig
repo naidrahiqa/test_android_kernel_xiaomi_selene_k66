@@ -1,0 +1,10 @@
+config MATCH_XIAOMI
+	tristate "Xiaomi Specific Patches on kernel"
+
+config HQ_SYSFS_SUPPORT
+	tristate "Huaqin Sysfs Driver"
+	depends on MATCH_XIAOMI
+	default n
+	help
+	  Huaqin Sysfs information driver includes specific information about
+	  hardware info and other info for HQ tools

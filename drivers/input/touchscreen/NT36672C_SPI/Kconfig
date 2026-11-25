@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Novatek NT36672C SPI touchscreen driver configuration
+#
+
+config TOUCHSCREEN_NT36672C_SPI
+	tristate "Novatek NT36672C host-download SPI touchscreen driver"
+	depends on SPI
+	help
+	  Say Y or M here if you have a Novatek NT36672C no-flash touchscreen
+	  connected via SPI (as used on Xiaomi Selene / K19A).
