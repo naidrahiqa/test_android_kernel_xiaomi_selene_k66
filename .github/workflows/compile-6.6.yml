@@ -117,7 +117,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p out/dts_verify
-          CPP_FLAGS="-nostdinc -include out/include/linux/kconfig.h -I kernel_device_modules-6.6/include -I kernel-6.6/include -I kernel_device_modules-6.6/arch/arm64/boot/dts/mediatek -I kernel_device_modules-6.6/arch/arm64/boot/dts -I kernel-6.6/scripts/dtc/include-prefixes -undef -D__DTS__ -x assembler-with-cpp"
+          CPP_FLAGS="-nostdinc -include kernel-6.6/include/linux/kconfig.h -I out/include -I kernel_device_modules-6.6/include -I kernel-6.6/include -I kernel_device_modules-6.6/arch/arm64/boot/dts/mediatek -I kernel_device_modules-6.6/arch/arm64/boot/dts -I kernel-6.6/scripts/dtc/include-prefixes -undef -D__DTS__ -x assembler-with-cpp"
           clang -E $CPP_FLAGS kernel_device_modules-6.6/arch/arm64/boot/dts/mediatek/mt6768.dts -o out/dts_verify/mt6768.pp.dts
           out/scripts/dtc/dtc -@ -I dts -O dtb -Wno-unit_address_vs_reg -Wno-simple_bus_reg -Wno-avoid_default_addr_size -Wno-pci_device_reg -o out/dts_verify/mt6768.dtb out/dts_verify/mt6768.pp.dts
           clang -E $CPP_FLAGS kernel_device_modules-6.6/arch/arm64/boot/dts/mediatek/selene.dts -o out/dts_verify/selene.pp.dts
