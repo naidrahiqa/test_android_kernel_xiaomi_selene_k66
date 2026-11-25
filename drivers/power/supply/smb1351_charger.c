@@ -18,8 +18,12 @@
 #include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/power_supply.h>
+#include <linux/property.h>
 #include <linux/regmap.h>
 #include <linux/regulator/driver.h>
+
+#include "charger_class.h"
+#include "mtk_charger.h"
 
 /* Configuration registers */
 #define SMB1351_CHG_CURRENT_CTRL_REG		0x00
@@ -182,6 +186,9 @@ struct smb1351_charger {
 	struct device *dev;
 	struct regmap *regmap;
 	struct power_supply *usb_psy;
+	struct power_supply_desc psy_desc;
+	struct charger_device *chg_dev;
+	const char *chg_dev_name;
 	struct regulator_dev *otg_rdev;
 	struct mutex lock;
 
@@ -521,6 +528,19 @@ static int smb1351_usb_get_property(struct power_supply *psy,
 		}
 		return 0;
 
+	case POWER_SUPPLY_PROP_TYPE:
+		ret = regmap_read(chip->regmap, SMB1351_STATUS_5_REG, &stat5);
+		if (ret)
+			return ret;
+
+		if (stat5 & SMB1351_STATUS_PORT_DCP)
+			val->intval = POWER_SUPPLY_TYPE_USB_DCP;
+		else if (stat5 & SMB1351_STATUS_PORT_CDP)
+			val->intval = POWER_SUPPLY_TYPE_USB_CDP;
+		else
+			val->intval = chip->psy_desc.type;
+		return 0;
+
 	case POWER_SUPPLY_PROP_USB_TYPE:
 		ret = regmap_read(chip->regmap, SMB1351_STATUS_5_REG, &stat5);
 		if (ret)
@@ -569,7 +589,7 @@ static int smb1351_usb_set_property(struct power_supply *psy,
 	struct smb1351_charger *chip = power_supply_get_drvdata(psy);
 	int ret;
 
-	guard(mutex)(&chip->lock);
+	mutex_lock(&chip->lock);
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT:
@@ -583,9 +603,11 @@ static int smb1351_usb_set_property(struct power_supply *psy,
 		ret = smb1351_set_float_voltage(chip, val->intval);
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		break;
 	}
 
+	mutex_unlock(&chip->lock);
 	return ret;
 }
 
@@ -607,6 +629,7 @@ static enum power_supply_property smb1351_usb_properties[] = {
 	POWER_SUPPLY_PROP_ONLINE,
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_CHARGE_TYPE,
+	POWER_SUPPLY_PROP_TYPE,
 	POWER_SUPPLY_PROP_USB_TYPE,
 	POWER_SUPPLY_PROP_INPUT_CURRENT_LIMIT,
 	POWER_SUPPLY_PROP_CURRENT_MAX,
@@ -616,13 +639,23 @@ static enum power_supply_property smb1351_usb_properties[] = {
 	POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE_MAX,
 };
 
+static const enum power_supply_usb_type smb1351_usb_types[] = {
+	POWER_SUPPLY_USB_TYPE_UNKNOWN,
+	POWER_SUPPLY_USB_TYPE_SDP,
+	POWER_SUPPLY_USB_TYPE_DCP,
+	POWER_SUPPLY_USB_TYPE_CDP,
+};
+
+static char *smb1351_psy_supplied_to[] = {
+	"battery",
+	"mtk-master-charger",
+};
+
 static const struct power_supply_desc smb1351_usb_desc = {
-	.name			= "smb1351-usb",
+	.name			= "primary_chg",
 	.type			= POWER_SUPPLY_TYPE_USB,
-	.usb_types		= BIT(POWER_SUPPLY_USB_TYPE_UNKNOWN) |
-				  BIT(POWER_SUPPLY_USB_TYPE_SDP) |
-				  BIT(POWER_SUPPLY_USB_TYPE_DCP) |
-				  BIT(POWER_SUPPLY_USB_TYPE_CDP),
+	.usb_types		= smb1351_usb_types,
+	.num_usb_types		= ARRAY_SIZE(smb1351_usb_types),
 	.properties		= smb1351_usb_properties,
 	.num_properties		= ARRAY_SIZE(smb1351_usb_properties),
 	.get_property		= smb1351_usb_get_property,
@@ -679,6 +712,257 @@ static const struct regulator_desc smb1351_otg_rdesc = {
 	.n_voltages	= 1,
 };
 
+static int smb1351_chg_enable(struct charger_device *chg_dev, bool en)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	mutex_lock(&chip->lock);
+	ret = smb1351_masked_write(chip, SMB1351_CMD_CHG_REG,
+				   SMB1351_CMD_CHG_EN_BIT,
+				   en ? SMB1351_CMD_CHG_EN_BIT : 0);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_is_enabled(struct charger_device *chg_dev, bool *en)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	unsigned int val;
+	int ret;
+
+	ret = regmap_read(chip->regmap, SMB1351_CMD_CHG_REG, &val);
+	if (ret)
+		return ret;
+
+	*en = !!(val & SMB1351_CMD_CHG_EN_BIT);
+	return 0;
+}
+
+static int smb1351_chg_get_charging_current(struct charger_device *chg_dev,
+					    u32 *uA)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+
+	mutex_lock(&chip->lock);
+	*uA = chip->fast_charge_current_ua;
+	mutex_unlock(&chip->lock);
+
+	return 0;
+}
+
+static int smb1351_chg_set_charging_current(struct charger_device *chg_dev,
+					    u32 uA)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	mutex_lock(&chip->lock);
+	ret = smb1351_set_fast_charge_current(chip, uA);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_get_min_charging_current(struct charger_device *chg_dev,
+						u32 *uA)
+{
+	*uA = fast_chg_current_table[0];
+	return 0;
+}
+
+static int smb1351_chg_set_constant_voltage(struct charger_device *chg_dev,
+					    u32 uV)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	mutex_lock(&chip->lock);
+	ret = smb1351_set_float_voltage(chip, uV);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_get_constant_voltage(struct charger_device *chg_dev,
+					    u32 *uV)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+
+	mutex_lock(&chip->lock);
+	*uV = chip->float_voltage_uv;
+	mutex_unlock(&chip->lock);
+
+	return 0;
+}
+
+static int smb1351_chg_get_input_current(struct charger_device *chg_dev, u32 *uA)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+
+	mutex_lock(&chip->lock);
+	*uA = chip->input_current_limit_ua;
+	mutex_unlock(&chip->lock);
+
+	return 0;
+}
+
+static int smb1351_chg_set_input_current(struct charger_device *chg_dev, u32 uA)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	mutex_lock(&chip->lock);
+	ret = smb1351_set_input_current_limit(chip, uA);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_set_eoc_current(struct charger_device *chg_dev, u32 uA)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	mutex_lock(&chip->lock);
+	ret = smb1351_set_term_current(chip, uA);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_enable_termination(struct charger_device *chg_dev,
+					  bool en)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	/* 0 in SMB1351_ITERM_EN_BIT enables termination */
+	mutex_lock(&chip->lock);
+	ret = smb1351_masked_write(chip, SMB1351_CHG_CTRL_REG,
+				   SMB1351_ITERM_EN_BIT,
+				   en ? 0 : SMB1351_ITERM_EN_BIT);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_is_charging_done(struct charger_device *chg_dev,
+					bool *done)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	unsigned int val;
+	int ret;
+
+	ret = regmap_read(chip->regmap, SMB1351_STATUS_4_REG, &val);
+	if (ret)
+		return ret;
+
+	*done = !!(val & SMB1351_STATUS_DONE_BIT);
+	return 0;
+}
+
+static int smb1351_chg_enable_otg(struct charger_device *chg_dev, bool en)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	mutex_lock(&chip->lock);
+	ret = regmap_update_bits(chip->regmap, SMB1351_CMD_CHG_REG,
+				 SMB1351_CMD_OTG_EN_BIT,
+				 en ? SMB1351_CMD_OTG_EN_BIT : 0);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_enable_hz(struct charger_device *chg_dev, bool en)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	int ret;
+
+	mutex_lock(&chip->lock);
+	ret = smb1351_masked_write(chip, SMB1351_CMD_INPUT_LIMIT_REG,
+				   SMB1351_CMD_SUSPEND_MODE_BIT,
+				   en ? SMB1351_CMD_SUSPEND_MODE_BIT : 0);
+	mutex_unlock(&chip->lock);
+
+	return ret;
+}
+
+static int smb1351_chg_dump_registers(struct charger_device *chg_dev)
+{
+	static const unsigned int extra_regs[] = {
+		SMB1351_CMD_I2C_REG,
+		SMB1351_CMD_INPUT_LIMIT_REG,
+		SMB1351_CMD_CHG_REG,
+		SMB1351_STATUS_0_REG,
+		SMB1351_STATUS_1_REG,
+		SMB1351_STATUS_4_REG,
+		SMB1351_STATUS_5_REG,
+	};
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+	unsigned int i, reg, val;
+	int ret;
+
+	for (reg = 0; reg <= SMB1351_LAST_CNFG_REG; reg++) {
+		ret = regmap_read(chip->regmap, reg, &val);
+		if (!ret)
+			dev_dbg(chip->dev, "reg[0x%02x] = 0x%02x\n", reg, val);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(extra_regs); i++) {
+		ret = regmap_read(chip->regmap, extra_regs[i], &val);
+		if (!ret)
+			dev_dbg(chip->dev, "reg[0x%02x] = 0x%02x\n",
+				extra_regs[i], val);
+	}
+
+	return 0;
+}
+
+static int smb1351_chg_do_event(struct charger_device *chg_dev, u32 event,
+				u32 args)
+{
+	struct smb1351_charger *chip = charger_get_data(chg_dev);
+
+	switch (event) {
+	case EVENT_FULL:
+	case EVENT_RECHARGE:
+	case EVENT_DISCHARGE:
+		power_supply_changed(chip->usb_psy);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static const struct charger_ops smb1351_chg_ops = {
+	.enable = smb1351_chg_enable,
+	.is_enabled = smb1351_chg_is_enabled,
+	.get_charging_current = smb1351_chg_get_charging_current,
+	.set_charging_current = smb1351_chg_set_charging_current,
+	.get_min_charging_current = smb1351_chg_get_min_charging_current,
+	.set_constant_voltage = smb1351_chg_set_constant_voltage,
+	.get_constant_voltage = smb1351_chg_get_constant_voltage,
+	.get_input_current = smb1351_chg_get_input_current,
+	.set_input_current = smb1351_chg_set_input_current,
+	.set_eoc_current = smb1351_chg_set_eoc_current,
+	.enable_termination = smb1351_chg_enable_termination,
+	.is_charging_done = smb1351_chg_is_charging_done,
+	.enable_otg = smb1351_chg_enable_otg,
+	.enable_hz = smb1351_chg_enable_hz,
+	.dump_registers = smb1351_chg_dump_registers,
+	.event = smb1351_chg_do_event,
+};
+
+static const struct charger_properties smb1351_chg_props = {
+	.alias_name = "smb1351",
+};
+
 static irqreturn_t smb1351_irq_handler(int irq, void *data)
 {
 	struct smb1351_charger *chip = data;
@@ -692,6 +976,7 @@ static irqreturn_t smb1351_irq_handler(int irq, void *data)
 	if (ret)
 		dev_err(chip->dev, "Failed to read IRQ status: %d\n", ret);
 
+	mutex_lock(&chip->lock);
 	regmap_read(chip->regmap, SMB1351_STATUS_1_REG, &stat1);
 
 	if (stat1 & SMB1351_STATUS_INPUT_USB_BIT) {
@@ -701,6 +986,7 @@ static irqreturn_t smb1351_irq_handler(int irq, void *data)
 				     SMB1351_CMD_CHG_EN_BIT,
 				     SMB1351_CMD_CHG_EN_BIT);
 	}
+	mutex_unlock(&chip->lock);
 
 	power_supply_changed(chip->usb_psy);
 
@@ -743,9 +1029,17 @@ static int smb1351_probe(struct i2c_client *client)
 
 	dev_info(dev, "detected SMB1351 charger (rev 0x%02x)\n", rev);
 
+	if (device_property_read_string(dev, "charger_name", &chip->chg_dev_name))
+		chip->chg_dev_name = "primary_chg";
+
+	chip->psy_desc = smb1351_usb_desc;
+	chip->psy_desc.name = chip->chg_dev_name;
+
 	psy_cfg.drv_data = chip;
 	psy_cfg.fwnode = dev_fwnode(dev);
-	chip->usb_psy = devm_power_supply_register(dev, &smb1351_usb_desc, &psy_cfg);
+	psy_cfg.supplied_to = smb1351_psy_supplied_to;
+	psy_cfg.num_supplicants = ARRAY_SIZE(smb1351_psy_supplied_to);
+	chip->usb_psy = devm_power_supply_register(dev, &chip->psy_desc, &psy_cfg);
 	if (IS_ERR(chip->usb_psy))
 		return dev_err_probe(dev, PTR_ERR(chip->usb_psy),
 				     "failed to register power supply\n");
@@ -801,7 +1095,22 @@ static int smb1351_probe(struct i2c_client *client)
 			return ret;
 	}
 
+	chip->chg_dev = charger_device_register(chip->chg_dev_name, dev, chip,
+						&smb1351_chg_ops,
+						&smb1351_chg_props);
+	if (IS_ERR(chip->chg_dev))
+		return dev_err_probe(dev, PTR_ERR(chip->chg_dev),
+				     "failed to register charger device\n");
+
 	return 0;
+}
+
+static void smb1351_remove(struct i2c_client *client)
+{
+	struct smb1351_charger *chip = i2c_get_clientdata(client);
+
+	if (!IS_ERR_OR_NULL(chip->chg_dev))
+		charger_device_unregister(chip->chg_dev);
 }
 
 static const struct of_device_id smb1351_of_match[] = {
@@ -818,6 +1127,7 @@ MODULE_DEVICE_TABLE(i2c, smb1351_i2c_ids);
 
 static struct i2c_driver smb1351_charger_driver = {
 	.probe = smb1351_probe,
+	.remove = smb1351_remove,
 	.driver = {
 		.name = "smb1351-charger",
 		.of_match_table = smb1351_of_match,
