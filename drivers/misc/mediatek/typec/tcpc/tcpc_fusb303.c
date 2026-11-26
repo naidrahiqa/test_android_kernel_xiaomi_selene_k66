@@ -1984,6 +1984,7 @@ static int fusb303_init_gpio(struct fusb303_chip *chip)
 	if (ret < 0) {
 		dev_err(cdev, "Error: failed to request GPIO %d (ret = %d)\n",
 				chip->pdata->int_gpio, ret);
+		return ret;
 	}
 
 	ret = gpio_direction_input(chip->pdata->int_gpio);
@@ -1991,20 +1992,25 @@ static int fusb303_init_gpio(struct fusb303_chip *chip)
 		dev_err(cdev,
 				"Error: failed to set GPIO %d as input pin(ret = %d)\n",
 				chip->pdata->int_gpio, ret);
+		return ret;
 	}
 
 	chip->irq_gpio = gpio_to_irq(chip->pdata->int_gpio);
-	if (chip->irq_gpio  <= 0) {
+	if (chip->irq_gpio <= 0) {
 		dev_err(cdev, "gpio to irq fail, chip->irq(%d)\n",
 				chip->irq_gpio);
+		return chip->irq_gpio < 0 ? chip->irq_gpio : -EINVAL;
 	}
 
 	ret = devm_request_irq(cdev, chip->irq_gpio, fusb303_interrupt,
 				IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 				"fusb303_int_gpio", chip);
-	if (ret)
+	if (ret) {
 		dev_err(cdev, "unable to request int_gpio %d\n",
 				chip->pdata->int_gpio);
+		chip->irq_gpio = 0;
+		return ret;
+	}
 
 	dev_info(cdev, "%s: name=%s, gpio=%d, IRQ number=%d\n",
 			__func__, chip->tcpc_desc->name,
@@ -2459,8 +2465,10 @@ static int fusb303_probe(struct i2c_client *client)
 
 
 	desc = devm_kzalloc(cdev, sizeof(*desc), GFP_KERNEL);
-	if (!desc)
-		return -ENOMEM;
+	if (!desc) {
+		ret = -ENOMEM;
+		goto err3;
+	}
 
 	desc->name = "type_c_port0";
 	desc->role_def = TYPEC_ROLE_TRY_SRC;
@@ -2518,6 +2526,10 @@ err5:
 		devm_kfree(cdev, chip->desc);
 #endif /* HAVE_DR */
 err4:
+	if (chip->irq_gpio > 0) {
+		devm_free_irq(cdev, chip->irq_gpio, chip);
+		chip->irq_gpio = 0;
+	}
 	fusb303_destory_device(cdev);
 
 err3:

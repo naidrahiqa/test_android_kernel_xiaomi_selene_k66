@@ -2087,7 +2087,7 @@ static const struct mtk_pll_data plls[] = {
 	PLL(CLK_APMIXED_MPLL, "mpll", 0x032C, 0x0338, BIT(0),
 		PLL_AO, 22, 8, 0x0330, 24, 0, 0, 0, 0x0330, 0),
 	PLL(CLK_APMIXED_MSDCPLL, "msdcpll", 0x033C, 0x0348, BIT(0),
-		0, 22, 8, 0x0320, 24, 0, 0, 0, 0x0340, 0),
+		0, 22, 8, 0x0340, 24, 0, 0, 0, 0x0340, 0),
 };
 
 static int  mtk_apmixedsys_init(struct platform_device *pdev)

@@ -700,6 +700,9 @@ void set_boot_phase(u32 step)
 	int ret = 0;
 #endif
 
+	if (!sram_header)
+		return;
+
 	if (sram_header->reserve[SRAM_PMIC_BOOT_PHASE] == FLAG_ENABLE) {
 		set_pmic_boot_phase(step);
 		if (last_boot_phase == 0)
@@ -942,16 +945,18 @@ int logstore_reset(struct notifier_block *nb, unsigned long action, void *data)
 }
 EXPORT_SYMBOL_GPL(logstore_reset);
 
+static struct notifier_block logstore_pm_nb = {
+	.notifier_call = logstore_pm_notify,
+};
+
 static struct notifier_block logstore_reboot_notify = {
 	.notifier_call = logstore_reset,
 };
 
 int log_store_late_init(void)
 {
-	static struct notifier_block logstore_pm_nb;
 	unsigned int boot_mode;
 
-	logstore_pm_nb.notifier_call = logstore_pm_notify;
 	if (register_pm_notifier(&logstore_pm_nb))
 		pr_warn("Failed to register PM notifier for logstore\n");
 
@@ -1132,14 +1137,20 @@ int log_store_sram_init(void)
 #if IS_ENABLED(CONFIG_MTK_DRAM_LOG_STORE)
 	struct mem_desc_ls sram_ls = { 0 };
 
-	if (dt_get_log_store(&sram_ls))
+	if (dt_get_log_store(&sram_ls) && sram_ls.addr) {
 		pr_info("log_store: get ok, sram addr:0x%x, size:0x%x\n",
 				sram_ls.addr, sram_ls.size);
-	else
-		pr_info("log_store: get fail\n");
+	} else {
+		pr_info("log_store: dt_get_log_store unavailable, skipping\n");
+		return -1;
+	}
 
 	sram_header = ioremap_wc(sram_ls.addr,
 		CONFIG_MTK_DRAM_LOG_STORE_SIZE);
+	if (!sram_header) {
+		pr_err("log_store: ioremap_wc failed\n");
+		return -1;
+	}
 	dram_curlog_header = &(sram_header->dram_curlog_header);
 #else
 	pr_notice("log_store: not Found CONFIG_MTK_DRAM_LOG_STORE!\n");
@@ -1175,8 +1186,8 @@ EXPORT_SYMBOL_GPL(log_store_sram_init);
 /* store log_store information to */
 static int __init log_store_early_init(void)
 {
-
-	log_store_sram_init();
+	if (log_store_sram_init() < 0)
+		return 0;
 #ifdef MODULE
 	log_store_late_init();
 #endif
@@ -1187,15 +1198,12 @@ static int __init log_store_early_init(void)
 #ifdef MODULE
 static void __exit log_store_exit(void)
 {
-	static struct notifier_block logstore_pm_nb;
-
 	if (entry)
 		proc_remove(entry);
 
 #if IS_ENABLED(CONFIG_MTK_LOG_STORE_BOOTPROF)
 	close_monitor_thread();
 #endif
-	logstore_pm_nb.notifier_call = logstore_pm_notify;
 	unregister_pm_notifier(&logstore_pm_nb);
 	unregister_reboot_notifier(&logstore_reboot_notify);
 }
