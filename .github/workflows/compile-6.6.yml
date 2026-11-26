@@ -77,7 +77,7 @@ jobs:
             CROSS_COMPILE=aarch64-linux-gnu- \
             KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
             olddefconfig 2>&1 | tee -a logs/config.log
-          grep -E 'CONFIG_CMDLINE=|CONFIG_KASAN=|CONFIG_UBSAN=|CONFIG_KVM=|CONFIG_EFI=|CONFIG_DEBUG_INFO_BTF=|CONFIG_CFI_PERMISSIVE=|CONFIG_NR_CPUS=|CONFIG_PANIC_TIMEOUT=|CONFIG_ARM64_PTR_AUTH_KERNEL=' out/.config | tee -a logs/config.log || true
+          grep -E 'CONFIG_(CMDLINE|CMDLINE_EXTEND|KASAN|UBSAN|KVM|EFI|DEBUG_INFO_BTF|CFI_PERMISSIVE|NR_CPUS|PANIC_TIMEOUT|ARM64_PTR_AUTH_KERNEL|SHADOW_CALL_STACK|MTK_PKVM_)' out/.config | tee -a logs/config.log || true
 
       - name: Build base kernel-6.6 (Image + modules + symvers)
         run: |
