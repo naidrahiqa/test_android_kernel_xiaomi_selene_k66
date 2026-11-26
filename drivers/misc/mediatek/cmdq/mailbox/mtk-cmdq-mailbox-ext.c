@@ -1955,7 +1955,10 @@ static irqreturn_t cmdq_irq_handler(int irq, void *dev)
 					atomic_read(&cmdq->usage), i,
 					atomic_read(&cmdq->thread[i].usage));
 		cmdq_mtcmos_by_fast(cmdq, false);
-		return IRQ_HANDLED;
+		pr_warn_ratelimited("cmdq: spurious irq while idle hwid:%hu usage:%d\n",
+			cmdq->hwid, atomic_read(&cmdq->usage));
+		cmdq_trace_end();
+		return IRQ_NONE;
 	}
 
 #if IS_ENABLED(CONFIG_MTK_IRQ_MONITOR_DEBUG)
@@ -2075,7 +2078,10 @@ static irqreturn_t cmdq_vm_irq_handler(int irq, void *dev)
 					atomic_read(&cmdq->usage), i,
 					atomic_read(&cmdq->thread[i].usage));
 		cmdq_mtcmos_by_fast(cmdq, false);
-		return IRQ_HANDLED;
+		pr_warn_ratelimited("cmdq: spurious irq while idle hwid:%hu usage:%d\n",
+			cmdq->hwid, atomic_read(&cmdq->usage));
+		cmdq_trace_end();
+		return IRQ_NONE;
 	}
 
 #if IS_ENABLED(CONFIG_MTK_IRQ_MONITOR_DEBUG)
@@ -3585,12 +3591,7 @@ static int cmdq_probe(struct platform_device *pdev)
 #if IS_ENABLED(CONFIG_MTK_IRQ_MONITOR)
 	irq_mon_aee_callback_register(cmdq->irq, cmdq_burst_irq_callback);
 #endif
-	err = devm_request_irq(dev, cmdq->irq, cmdq_irq_handler, IRQF_SHARED,
-			       "mtk_cmdq", cmdq);
-	if (err < 0) {
-		cmdq_err("failed to register ISR (%d)", err);
-		return err;
-	}
+	/* Defer devm_request_irq(cmdq->irq) until clocks, genpd, and threads are initialized */
 
 	INIT_LIST_HEAD(&cmdq->irq_removes);
 	spin_lock_init(&cmdq->irq_removes_lock);
@@ -3891,6 +3892,53 @@ static int cmdq_probe(struct platform_device *pdev)
 
 	if (cmdq->hwid == 0 && cmdq_print_debug)
 		cmdq_util_reserved_memory_lookup(dev);
+
+	if (!cmdq->gce_vm) {
+		int pwr_ret = 0, clk_ret = 0, tmr_ret = 0;
+
+		if (!cmdq->fast_mtcmos && !IS_ERR_OR_NULL(cmdq->pd_mminfra_1))
+			pwr_ret = pm_runtime_resume_and_get(cmdq->pd_mminfra_1);
+		if (cmdq->clock)
+			clk_ret = clk_prepare_enable(cmdq->clock);
+		if (cmdq->clock_timer)
+			tmr_ret = clk_prepare_enable(cmdq->clock_timer);
+
+		if (pwr_ret >= 0 && clk_ret == 0 && tmr_ret == 0) {
+			unsigned long irq_status =
+				readl(cmdq->base + CMDQ_CURR_IRQ_STATUS) & CMDQ_IRQ_MASK;
+			unsigned long bit;
+
+			if (irq_status ^ CMDQ_IRQ_MASK) {
+				cmdq_err("hwid:%hu clear stale irq_status:%#lx before request_irq",
+					 cmdq->hwid, irq_status);
+				for_each_clear_bit(bit, &irq_status, fls(CMDQ_IRQ_MASK)) {
+					struct cmdq_thread *thread = &cmdq->thread[bit];
+					u32 irq_flag;
+
+					if (!thread->base)
+						continue;
+					irq_flag = readl(thread->base + CMDQ_THR_IRQ_STATUS);
+					writel(0, thread->base + CMDQ_THR_IRQ_ENABLE);
+					if (irq_flag)
+						writel(~irq_flag, thread->base + CMDQ_THR_IRQ_STATUS);
+				}
+			}
+		}
+
+		if (cmdq->clock_timer && tmr_ret == 0)
+			clk_disable_unprepare(cmdq->clock_timer);
+		if (cmdq->clock && clk_ret == 0)
+			clk_disable_unprepare(cmdq->clock);
+		if (!cmdq->fast_mtcmos && !IS_ERR_OR_NULL(cmdq->pd_mminfra_1) && pwr_ret >= 0)
+			pm_runtime_put_sync(cmdq->pd_mminfra_1);
+	}
+
+	err = devm_request_irq(dev, cmdq->irq, cmdq_irq_handler, IRQF_SHARED,
+			       "mtk_cmdq", cmdq);
+	if (err < 0) {
+		cmdq_err("failed to register ISR (%d)", err);
+		return err;
+	}
 
 	return 0;
 }
