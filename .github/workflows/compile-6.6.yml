@@ -86,6 +86,7 @@ jobs:
             CROSS_COMPILE=aarch64-linux-gnu- \
             KCONFIG_EXT_PREFIX=../kernel_device_modules-6.6/ \
             DEVICE_MODULES_REL_DIR=../kernel_device_modules-6.6 \
+            KALLSYMS_EXTRA_PASS=1 \
             -j"$(nproc)" Image modules 2>&1 | tee logs/base_build.log
 
       - name: Build kernel_device_modules-6.6 out-of-tree modules
