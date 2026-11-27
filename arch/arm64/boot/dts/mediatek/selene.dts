@@ -15,7 +15,7 @@
 #include <dt-bindings/pinctrl/mt65xx.h>
 #include "mediatek/cust_mt6768_touch_1080x2400.dtsi"
 
-/ {
+&{/} {
 	selene_battery: battery {
 		compatible = "simple-battery";
 		constant-charge-current-max-microamp = <1800000>;
@@ -364,7 +364,7 @@
 		rt-tcpc,name = "type_c_port0";
 		rt-tcpc,role-def = <5>; /* Try.SNK */
 		rt-tcpc,rp-level = <0>; /* Default */
-		rt-tcpc,vconn-supply = <1>; /* Always */
+		rt-tcpc,vconn_supply = <1>; /* Always */
 		rt1711pd,intr-gpio = <&pio 41 0x0>;
 		rt1711pd,intr-gpio-num = <41>;
 		pd-data {

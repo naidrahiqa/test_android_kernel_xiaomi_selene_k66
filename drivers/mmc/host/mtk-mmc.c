@@ -4420,6 +4420,16 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	if (ret)
 		goto host_free;
 
+	if (host_index == 0 || mmc->index == 0) {
+		const char *old_name = pdev->name;
+		device_rename(mmc->parent, "bootdevice");
+		pdev->name = old_name;
+	} else if (host_index == 1 || mmc->index == 1) {
+		const char *old_name = pdev->name;
+		device_rename(mmc->parent, "externdevice");
+		pdev->name = old_name;
+	}
+
 	mmc->cqe_recovery_reset_always = 1;
 
 	host->base = devm_platform_ioremap_resource(pdev, 0);
