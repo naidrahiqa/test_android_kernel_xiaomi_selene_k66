@@ -13,6 +13,7 @@
 #include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/regmap.h>
+#include "../../oem/bklic.h"
 #include "lm3697.h"
 
 #define LM3697_REG_ENABLE		0x10
@@ -113,6 +114,23 @@ static int lm3697_probe(struct i2c_client *client)
 	struct device *dev = &client->dev;
 	struct lm3697 *lm3697;
 	int ret;
+
+#if IS_ENABLED(CONFIG_MATCH_XIAOMI)
+	/*
+	 * Selene mounts either an LM3697 or a KTD3137 on the same I2C bus
+	 * and shares the enable line (GPIO160) between the two footprints.
+	 * The bootloader reports the populated variant through ":bklic="
+	 * (1 = LM3697, 24 = KTD3137).  Do not probe on a KTD board, or we
+	 * claim the shared GPIO first and the real driver fails with
+	 * -EBUSY afterwards.
+	 *
+	 * When the variant is unknown selene_bklic() returns -ENODEV.  Keep
+	 * probing in that case: i2c0 children are probed in DT order and
+	 * the panel fallback (lcm_setbacklight_cmdq) tries LM3697 first.
+	 */
+	if (selene_bklic() == 24)
+		return -ENODEV;
+#endif
 
 	lm3697 = devm_kzalloc(dev, sizeof(*lm3697), GFP_KERNEL);
 	if (!lm3697)

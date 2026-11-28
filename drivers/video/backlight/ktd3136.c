@@ -19,6 +19,7 @@
 #include <linux/pwm.h>
 #include <linux/regmap.h>
 #include <linux/workqueue.h>
+#include "../../oem/bklic.h"
 #include "ktd3136.h"
 
 #define KTD3137_REG_MODE		0x02
@@ -385,6 +386,28 @@ static int ktd3137_probe(struct i2c_client *client)
 	struct ktd3137 *ktd;
 	int ret;
 
+#if IS_ENABLED(CONFIG_MATCH_XIAOMI)
+	/*
+	 * Only the KTD3137 variant (":bklic=24") has this chip.  Without
+	 * the gate both backlight drivers probe on every unit and the
+	 * second one loses the shared enable GPIO (GPIO160) with -EBUSY.
+	 * Keep probing when the variant is unknown so the panel fallback
+	 * can still decide at runtime.
+	 */
+	if (selene_bklic() == 1)
+		return -ENODEV;
+
+	/*
+	 * The DT node is placed at 0x37 only to keep a unique unit
+	 * address; the KTD3137 silicon answers at 0x36, the same
+	 * footprint address the LM3697 uses.  Only reprogram the address
+	 * when the bootloader positively identified this board as a
+	 * KTD3137 one, so an unknown board never writes LM3697-style
+	 * registers into a neighbouring device.
+	 */
+	if (selene_bklic() == 24)
+		client->addr = 0x36;
+#endif
 
 	ktd = devm_kzalloc(dev, sizeof(*ktd), GFP_KERNEL);
 	if (!ktd)
