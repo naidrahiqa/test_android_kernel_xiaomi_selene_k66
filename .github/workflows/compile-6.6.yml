@@ -126,6 +126,29 @@ jobs:
           out/scripts/dtc/dtc -@ -I dts -O dtb -Wno-unit_address_vs_reg -Wno-simple_bus_reg -Wno-avoid_default_addr_size -Wno-pci_device_reg -o out/dts_verify/selene.dtbo out/dts_verify/selene.pp.dts
           ls -lh out/dts_verify/*.dtb*
 
+          # The stock LK applies dtbo_a with ufdt_apply_overlay() and asserts
+          # (app/mt_boot/bootargs.c:106) when a fragment target symbol is
+          # missing from the base DTB, which shows up as a logo bootloop or a
+          # final fastboot. Fail the build here instead of shipping an
+          # unbootable Image.gz-dtb.
+          echo "=== Verify LK placeholder symbols in base DTB ==="
+          out/scripts/dtc/dtc -I dtb -O dts out/dts_verify/mt6768.dtb 2>/dev/null \
+            | sed -n '/__symbols__/,$p' > out/dts_verify/mt6768.symbols
+          for s in board_id dsi_err_flag flashlights_led191 maxim_ds28e16 \
+                   mt6370_pmu mt_pmic_vsim1_ldo_reg mt_pmic_vsim2_ldo_reg \
+                   onewire_gpio reverse_high reverse_low swtp; do
+            grep -qE "^[[:space:]]*$s = " out/dts_verify/mt6768.symbols \
+              || { echo "MISSING LK placeholder symbol in mt6768.dtb: $s"; exit 1; }
+          done
+          echo "All 11 LK placeholder symbols present"
+
+          echo "=== Verify Selene DTBO backlight node ==="
+          out/scripts/dtc/dtc -I dtb -O dts out/dts_verify/selene.dtbo 2>/dev/null \
+            | awk '/ktd@37 \{/,/^\t*};/' > out/dts_verify/selene.ktd37
+          grep -q "enable-gpios" out/dts_verify/selene.ktd37 \
+            || { echo "selene.dtbo: ktd@37 is missing enable-gpios"; exit 1; }
+          echo "Selene DTBO ktd@37 enable-gpios present"
+
       - name: List built Selene .ko modules
         if: always()
         run: |
@@ -145,6 +168,13 @@ jobs:
           cp out/dts_verify/mt6768.dtb dist/dtb/mt6768.dtb
           cp out/dts_verify/selene.dtbo dist/dtb/selene.dtbo
           cat dist/Image.gz dist/dtb/mt6768.dtb > dist/Image.gz-dtb
+
+          # Record exactly which tree and artifacts were packaged. The boot
+          # image and dtbo must always come from the same commit (a stale
+          # dtbo silently disables DT fixes even when the kernel is new).
+          git -C kernel_device_modules-6.6 rev-parse HEAD > dist/meta/ci-commit.txt
+          sha256sum dist/Image.gz-dtb dist/dtb/mt6768.dtb dist/dtb/selene.dtbo \
+            > dist/meta/image-sha256.txt
 
           python3 - <<'PY'
           import os, struct
