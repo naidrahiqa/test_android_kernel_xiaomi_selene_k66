@@ -75,6 +75,32 @@ exit:
 #endif
 }
 
+#ifndef CONFIG_FPGA_EARLY_PORTING
+static struct pinctrl *disp_get_pinctrl(struct device *dev)
+{
+	struct device_node *np;
+	struct platform_device *fb_pdev;
+	struct pinctrl *pctrl;
+
+	if (of_property_present(dev->of_node, "pinctrl-0"))
+		return devm_pinctrl_get(dev);
+
+	/* pin states are owned by the mtkfb node, which the dtbo relocates */
+	np = of_find_compatible_node(NULL, NULL, "mediatek,mtkfb");
+	if (!np)
+		return ERR_PTR(-ENODEV);
+
+	fb_pdev = of_find_device_by_node(np);
+	of_node_put(np);
+	if (!fb_pdev)
+		return ERR_PTR(-EPROBE_DEFER);
+
+	pctrl = devm_pinctrl_get(&fb_pdev->dev);
+	put_device(&fb_pdev->dev);
+	return pctrl;
+}
+#endif
+
 long disp_dts_gpio_init(struct device *dev, struct mtk_drm_private *private)
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
@@ -82,7 +108,7 @@ long disp_dts_gpio_init(struct device *dev, struct mtk_drm_private *private)
 	struct pinctrl *pctrl;
 
 	/* retrieve */
-	pctrl = devm_pinctrl_get(dev);
+	pctrl = disp_get_pinctrl(dev);
 	if (IS_ERR(pctrl)) {
 		DDPPR_ERR("Cannot find disp pinctrl!\n");
 		ret = PTR_ERR(pctrl);

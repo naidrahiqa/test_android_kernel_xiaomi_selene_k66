@@ -820,14 +820,6 @@
 };
 
 &dispsys_config {
-	pinctrl-names =
-		"lcm_rst_out1_gpio", "lcm_rst_out0_gpio",
-		"mode_te_te", "6382_rst_out1_gpio", "6382_rst_out0_gpio";
-	pinctrl-0 = <&mtkfb_pins_lcm_rst_out1_gpio>;
-	pinctrl-1 = <&mtkfb_pins_lcm_rst_out0_gpio>;
-	pinctrl-2 = <&mtkfb_pins_lcm_dsi_te>;
-	pinctrl-3 = <&mtkfb_pins_6382_rst_out1_gpio>;
-	pinctrl-4 = <&mtkfb_pins_6382_rst_out0_gpio>;
 	status = "okay";
 };
 
