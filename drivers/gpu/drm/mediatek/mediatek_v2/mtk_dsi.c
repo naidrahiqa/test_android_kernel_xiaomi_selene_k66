@@ -15129,7 +15129,6 @@ static int mtk_dsi_probe(struct platform_device *pdev)
 		}
 
 
-		irq_set_status_flags(irq, IRQ_TYPE_LEVEL_HIGH);
 		ret = devm_request_irq(
 			&pdev->dev, irq, dsi->driver_data->irq_handler,
 			IRQF_TRIGGER_NONE | IRQF_SHARED, dev_name(&pdev->dev), dsi);

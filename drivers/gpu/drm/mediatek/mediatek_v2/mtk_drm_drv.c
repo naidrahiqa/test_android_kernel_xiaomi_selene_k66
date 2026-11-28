@@ -7295,8 +7295,8 @@ static void mtk_drm_get_top_clk(struct mtk_drm_private *priv)
 	struct clk *clk;
 	int ret, i, clk_num;
 
+	spin_lock_init(&top_clk_lock);
 	if (disp_helper_get_stage() != DISP_HELPER_STAGE_NORMAL) {
-		spin_lock_init(&top_clk_lock);
 		/* TODO: check display enable from lk */
 		atomic_set(&top_isr_ref, 0);
 		atomic_set(&top_clk_ref, 1);
@@ -7340,7 +7340,6 @@ static void mtk_drm_get_top_clk(struct mtk_drm_private *priv)
 	}
 
 	if (disp_helper_get_stage() == DISP_HELPER_STAGE_NORMAL) {
-		spin_lock_init(&top_clk_lock);
 		/* TODO: check display enable from lk */
 		atomic_set(&top_isr_ref, 0);
 		atomic_set(&top_clk_ref, 1);
@@ -7492,7 +7491,8 @@ bool mtk_drm_top_clk_isr_get(struct mtk_ddp_comp *comp)
 		spin_lock_irqsave(&top_clk_lock, flags);
 		if (atomic_read(&top_clk_ref) <= 0) {
 			spin_unlock_irqrestore(&top_clk_lock, flags);
-			DDPPR_ERR("%s, top clk off at %s\n", __func__, mtk_dump_comp_str(comp));
+			pr_err_ratelimited("[DISP][E]%s, top clk off at %s\n",
+					   __func__, mtk_dump_comp_str(comp));
 			return false;
 		}
 		atomic_inc(&top_isr_ref);
