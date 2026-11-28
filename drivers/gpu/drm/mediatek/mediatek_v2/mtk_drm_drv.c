@@ -41,6 +41,11 @@
 #include "mtk_drm_debugfs.h"
 #include "mtk_drm_drv.h"
 #include "mtk_drm_fb.h"
+
+/* mtk_drm_fbdev.h clashes with mtk_drm_drv.h on tag_videolfb; declare directly */
+#if IS_ENABLED(CONFIG_DRM_FBDEV_EMULATION)
+int mtk_fbdev_init(struct drm_device *dev);
+#endif
 #include "mtk_drm_gem.h"
 #include "mtk_drm_session.h"
 #include "mtk_fence.h"
@@ -9270,6 +9275,16 @@ static void mtk_drm_kms_lateinit(struct kthread_work *work)
 		mtk_drm_init_emi_eff_table(drm);
 
 	mtk_drm_first_enable(drm);
+
+#if IS_ENABLED(CONFIG_DRM_FBDEV_EMULATION)
+	/*
+	 * selene bring-up: no display userspace runs in the stage-1
+	 * ramdisk, so initialise the fbdev emulation here to give fbcon
+	 * a framebuffer and let the CRTC/DSI get enabled at boot.
+	 */
+	if (mtk_fbdev_init(drm))
+		DDPPR_ERR("mtk fbdev init failed\n");
+#endif
 
 #if IS_ENABLED(CONFIG_MTK_DISP_MMDVFS_INIT_SEQUENCE)
 	mmdvfs_disp_boot_ready();

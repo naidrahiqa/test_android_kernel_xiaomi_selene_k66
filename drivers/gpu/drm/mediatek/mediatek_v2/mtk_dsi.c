@@ -14967,6 +14967,31 @@ static struct device_node *mtk_dsi_find_lk_panel_node(struct device_node *dsi_no
 	return NULL;
 }
 
+/*
+ * selene bring-up: the DTB (base + stock dtbo overlay) carries
+ * atag,videolfb-islcm_inited = 0 while LK actually leaves the LCM
+ * powered. Return false in that case so the kernel performs the full
+ * panel power-on/init instead of assuming the LK handoff state.
+ */
+static bool mtk_dsi_lcm_inited_by_lk(void)
+{
+	struct device_node *chosen;
+	u32 inited = 1;
+
+	chosen = of_find_node_by_path("/chosen");
+	if (!chosen)
+		return true;
+
+	if (!of_property_read_u32(chosen, "atag,videolfb-islcm_inited",
+				  &inited)) {
+		of_node_put(chosen);
+		return inited != 0;
+	}
+
+	of_node_put(chosen);
+	return true;
+}
+
 static int mtk_dsi_probe(struct platform_device *pdev)
 {
 	struct mtk_dsi *dsi;
@@ -15171,8 +15196,19 @@ static int mtk_dsi_probe(struct platform_device *pdev)
 		}
 		dsi->output_en = true;
 		if (dsi->panel) {
-			dsi->panel->prepared = true;
-			dsi->panel->enabled = true;
+			/*
+			 * selene bring-up: honour the DTB hint
+			 * atag,videolfb-islcm_inited = 0. The panel is not
+			 * left initialised by LK, so keep prepared/enabled
+			 * false and let the kernel run the full panel
+			 * power-on and DCS init sequence on the first
+			 * enable. Without the hint, keep the legacy LK
+			 * handoff behaviour.
+			 */
+			if (mtk_dsi_lcm_inited_by_lk()) {
+				dsi->panel->prepared = true;
+				dsi->panel->enabled = true;
+			}
 		}
 		dsi->clk_refcnt = 1;
 		if (dsi->ext && dsi->ext->is_connected == -1)

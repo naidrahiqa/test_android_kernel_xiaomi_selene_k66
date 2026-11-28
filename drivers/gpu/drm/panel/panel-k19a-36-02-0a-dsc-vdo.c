@@ -85,6 +85,7 @@ struct lcm {
 	unsigned int current_fps;
 	bool prepared;
 	bool enabled;
+	bool bl_on_done;
 	int error;
 };
 
@@ -131,6 +132,56 @@ static bool lcm_is_k19l_pcba(void)
 	sub = ((cfg - 1) % SELENE_PCBA_STRIDE) + 1;
 	/* 2: PCBA_K19A_LA, 8: PCBA_K19L_LA, 13: PCBA_K19V/K19S_LA */
 	return (sub == 2 || sub == 8 || sub == 13);
+}
+
+/*
+ * selene bring-up: the DTB (base + stock dtbo overlay) carries
+ * atag,videolfb-islcm_inited = 0. When that hint is present the panel
+ * is NOT left initialised by LK, so the kernel must run the full
+ * power-on and DCS init sequence on the first enable.
+ */
+static bool lcm_is_inited_by_lk(void)
+{
+	struct device_node *chosen;
+	u32 inited = 1;
+
+	chosen = of_find_node_by_path("/chosen");
+	if (!chosen)
+		return true;
+
+	if (!of_property_read_u32(chosen, "atag,videolfb-islcm_inited",
+				  &inited)) {
+		of_node_put(chosen);
+		return inited != 0;
+	}
+
+	of_node_put(chosen);
+	return true;
+}
+
+/* Default boot backlight level (~50%), used when no phandle is wired. */
+#define SELENE_BL_DEFAULT_LEVEL	1024
+
+/*
+ * selene bring-up: the panel node carries no backlight phandle and the
+ * stage-1 ramdisk has no userspace to set brightness, so turn the
+ * external backlight IC on at the first panel enable.
+ */
+static void lcm_backlight_bringup(struct lcm *ctx)
+{
+	if (ctx->bl_on_done)
+		return;
+	ctx->bl_on_done = true;
+
+#if IS_ENABLED(CONFIG_BACKLIGHT_LM3697)
+	if (lm3697_set_brightness(SELENE_BL_DEFAULT_LEVEL, 1) != -ENODEV)
+		return;
+#endif
+#if IS_ENABLED(CONFIG_BACKLIGHT_KTD3136)
+	if (ktd3137_brightness_set(SELENE_BL_DEFAULT_LEVEL, 1) != -ENODEV)
+		return;
+#endif
+	dev_info(ctx->dev, "no external backlight IC answered\n");
 }
 
 static void lcm_power_on(struct lcm *ctx)
@@ -323,6 +374,8 @@ static int lcm_enable(struct drm_panel *panel)
 		ctx->backlight->props.power = FB_BLANK_UNBLANK;
 		backlight_update_status(ctx->backlight);
 	}
+
+	lcm_backlight_bringup(ctx);
 
 	ctx->enabled = true;
 	return 0;
@@ -695,8 +748,14 @@ static int lcm_probe(struct mipi_dsi_device *dsi)
 					     "failed to get bias-neg gpio\n");
 	}
 
-	ctx->prepared = true;
-	ctx->enabled = true;
+	/*
+	 * Vendor DRM skips panel prepare on the first enable when LK has
+	 * already initialised the LCM. Honour the atag,videolfb-islcm_inited
+	 * hint: when it is 0, keep prepared/enabled false so the kernel
+	 * performs the full power-on and DCS init sequence.
+	 */
+	ctx->prepared = lcm_is_inited_by_lk();
+	ctx->enabled = ctx->prepared;
 
 	drm_panel_init(&ctx->panel, dev, &lcm_drm_funcs, DRM_MODE_CONNECTOR_DSI);
 	drm_panel_add(&ctx->panel);
