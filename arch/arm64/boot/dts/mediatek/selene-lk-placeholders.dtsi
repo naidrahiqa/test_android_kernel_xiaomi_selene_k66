@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (c) 2021 Xiaomi Corporation
+ *
+ * LK overlay anchors for Xiaomi Selene (K19A, MT6768).
+ *
+ * The stock MT6768 LK applies the device `dtbo_a` overlay with
+ * ufdt_apply_overlay() and asserts in app/mt_boot/bootargs.c:106 when a
+ * fragment cannot resolve one of its target symbols.  The stock Selene
+ * overlay references the labels below, but the 6.6 base mt6768.dts no
+ * longer defines them (they existed in the 4.14 base and in the
+ * bootloader's expected symbol table).
+ *
+ * Keep these nodes in the *base* DTB (not only in selene.dts, which is
+ * compiled into the DTBO): __symbols__ is built from the base tree, so
+ * an overlay-only definition does not satisfy LK.
+ *
+ * The nodes are intentionally inert.  Real devices still get their
+ * content from the overlay (e.g. selene.dts merges its own board_id and
+ * flashlights_led191 properties on top of these anchors).  If a label
+ * here ever collides with a real driver node, prefer moving the real
+ * definition into the base tree and dropping the stub rather than
+ * defining the label twice.
+ */
+
+/ {
+	board_id: board_id {
+		compatible = "mediatek,board_id";
+	};
+
+	dsi_err_flag: dsi_err_flag {
+		status = "disabled";
+	};
+
+	flashlights_led191: flashlights_led191 {
+		status = "disabled";
+	};
+
+	maxim_ds28e16: maxim_ds28e16 {
+		status = "disabled";
+	};
+
+	mt6370_pmu: mt6370_pmu {
+		status = "disabled";
+	};
+
+	mt_pmic_vsim1_ldo_reg: mt_pmic_vsim1_ldo_reg {
+		status = "disabled";
+	};
+
+	mt_pmic_vsim2_ldo_reg: mt_pmic_vsim2_ldo_reg {
+		status = "disabled";
+	};
+
+	onewire_gpio: onewire_gpio {
+		status = "disabled";
+	};
+
+	reverse_high: reverse_high {
+	};
+
+	reverse_low: reverse_low {
+	};
+
+	swtp: swtp {
+		status = "disabled";
+	};
+};

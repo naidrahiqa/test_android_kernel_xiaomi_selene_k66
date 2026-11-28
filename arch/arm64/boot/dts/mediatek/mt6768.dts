@@ -5704,3 +5704,10 @@ transparent_hugepage=never";
 	md-vmodem = <750000 750000>;
 };
 
+/*
+ * LK overlay anchors for Selene. This must stay in the base DTB because
+ * the bootloader resolves stock dtbo_a fragments against __symbols__ of
+ * the base tree (see the file header for details).
+ */
+#include "mediatek/selene-lk-placeholders.dtsi"
+
