@@ -218,9 +218,14 @@ static int mtk_drm_fbdev_mmap(struct fb_info *info, struct vm_area_struct *vma)
 
 static struct fb_ops mtk_fbdev_ops = {
 	.owner = THIS_MODULE,
-	.fb_fillrect = drm_fb_helper_cfb_fillrect,
-	.fb_copyarea = drm_fb_helper_cfb_copyarea,
-	.fb_imageblit = drm_fb_helper_cfb_imageblit,
+	/*
+	 * The framebuffer is a vmap of system RAM pages, not I/O memory, so
+	 * use the sys_* drawing helpers.  cfb_* would also work at runtime but
+	 * CONFIG_FB_CFB_* are hidden tristates that nothing selects for DRM
+	 * fbdev emulation, so mediatek-drm.ko failed modpost with undefined
+	 * cfb_fillrect/cfb_copyarea/cfb_imageblit.
+	 */
+	__FB_DEFAULT_DMAMEM_OPS_DRAW,
 	.fb_check_var = drm_fb_helper_check_var,
 	.fb_set_par = drm_fb_helper_set_par,
 	.fb_blank = drm_fb_helper_blank,
@@ -232,107 +237,16 @@ static struct fb_ops mtk_fbdev_ops = {
 	.fb_ioctl = mtk_drm_fb_ioctl,
 };
 
-bool mtk_drm_lcm_is_connect(void)
-{
-	struct device_node *chosen_node;
-
-	chosen_node = of_find_node_by_path("/chosen");
-	if (chosen_node) {
-		struct tag_videolfb *videolfb_tag = NULL;
-		unsigned long size = 0;
-
-		videolfb_tag = (struct tag_videolfb *)of_get_property(
-			chosen_node,
-			"atag,videolfb", (int *)&size);
-		if (videolfb_tag)
-			return videolfb_tag->islcmfound;
-
-		DDPINFO("[DT][videolfb] videolfb_tag not found\n");
-	} else {
-		DDPINFO("[DT][videolfb] of_chosen not found\n");
-	}
-
-	return false;
-}
-
-int _parse_tag_videolfb(unsigned int *vramsize, phys_addr_t *fb_base,
-			unsigned int *fps)
-{
-#ifdef CONFIG_MTK_DISP_NO_LK
-		return -1;
-#else
-	struct device_node *chosen_node;
-
-	*fps = 6000;
-	chosen_node = of_find_node_by_path("/chosen");
-	if (chosen_node) {
-		struct tag_videolfb *videolfb_tag = NULL;
-		unsigned long size = 0;
-
-		videolfb_tag = (struct tag_videolfb *)of_get_property(
-			chosen_node, "atag,videolfb", (int *)&size);
-		if (videolfb_tag) {
-			*vramsize = videolfb_tag->vram;
-			*fb_base = videolfb_tag->fb_base;
-			*fps = videolfb_tag->fps;
-			if (*fps == 0)
-				*fps = 6000;
-			return 0;
-		}
-
-		DDPINFO("[DT][videolfb] videolfb_tag not found\n");
-		goto found;
-	} else {
-		DDPINFO("[DT][videolfb] of_chosen not found\n");
-	}
-	return -1;
-
-found:
-	DDPINFO("[DT][videolfb] fb_base    = 0x%lx\n", (unsigned long)*fb_base);
-	DDPINFO("[DT][videolfb] vram       = 0x%x (%d)\n", *vramsize,
-		*vramsize);
-	DDPINFO("[DT][videolfb] fps	   = %d\n", *fps);
-
-	return 0;
-#endif
-}
-
-static int free_reserved_buf(phys_addr_t start_phys, phys_addr_t end_phys)
-{
-	phys_addr_t pos;
-
-	WARN_ON(start_phys & ~PAGE_MASK);
-	WARN_ON(end_phys & ~PAGE_MASK);
-
-	if (end_phys <= start_phys) {
-		DDPPR_ERR("%s end_phys:0x%lx is smaller than start_phys:0x%lx\n",
-			__func__, (unsigned long)end_phys, (unsigned long)start_phys);
-
-		return -1;
-	}
-
-	for (pos = start_phys; pos < end_phys; pos += PAGE_SIZE)
-		free_reserved_page(phys_to_page(pos));
-
-	return 0;
-}
-
-int free_fb_buf(void)
-{
-	phys_addr_t fb_base;
-	unsigned int vramsize, fps;
-
-	_parse_tag_videolfb(&vramsize, &fb_base, &fps);
-
-	if (fb_base)
-		free_reserved_buf(fb_base, fb_base + vramsize);
-	else {
-		DDPINFO("%s:get fb pa error\n", __func__);
-		return -1;
-	}
-
-	return 0;
-}
+/*
+ * mtk_drm_lcm_is_connect() lives in mtk_drm_drv.c (struct mtk_drm_crtc
+ * argument).  The old fbdev-local variant with no arguments clashed with it
+ * and had no callers, so it is gone.
+ *
+ * _parse_tag_videolfb() and free_fb_buf() also live in the core objects
+ * (mtk_drm_drv.c / mtk_drm_crtc.c).  Defining them here as well would give
+ * mediatek-drm.ko duplicate symbols as soon as fbdev emulation is enabled,
+ * so the probe below just calls the core implementation.
+ */
 
 static int mtk_fbdev_probe(struct drm_fb_helper *helper,
 			   struct drm_fb_helper_surface_size *sizes)
@@ -382,7 +296,7 @@ static int mtk_fbdev_probe(struct drm_fb_helper *helper,
 
 	private->fbdev_bo = &mtk_gem->base;
 
-	info = drm_fb_helper_alloc_fbi(helper);
+	info = drm_fb_helper_alloc_info(helper);
 	if (IS_ERR(info)) {
 		err = PTR_ERR(info);
 		dev_err(dev->dev, "failed to allocate framebuffer info, %d\n",
@@ -399,12 +313,10 @@ static int mtk_fbdev_probe(struct drm_fb_helper *helper,
 	}
 	helper->fb = fb;
 
-	info->flags = FBINFO_FLAG_DEFAULT;
 	info->fbops = &mtk_fbdev_ops;
 
 	drm_fb_helper_fill_info(info, helper, sizes);
 
-	dev->mode_config.fb_base = fb_base;
 	info->screen_base = mtk_gem->kvaddr;
 	info->screen_size = size;
 	info->fix.smem_len = size;
@@ -473,7 +385,7 @@ int mtk_fbdev_init(struct drm_device *dev)
 	if (!dev->mode_config.num_crtc || !dev->mode_config.num_connector)
 		return -EINVAL;
 
-	drm_fb_helper_prepare(dev, helper, &mtk_drm_fb_helper_funcs);
+	drm_fb_helper_prepare(dev, helper, 32, &mtk_drm_fb_helper_funcs);
 
 	ret = drm_fb_helper_init(dev, helper);
 	if (ret) {
@@ -488,7 +400,7 @@ int mtk_fbdev_init(struct drm_device *dev)
 		goto fini;
 	}
 
-	ret = drm_fb_helper_initial_config(helper, 32);
+	ret = drm_fb_helper_initial_config(helper);
 	if (ret) {
 		dev_err(dev->dev, "failed to set initial configuration, %d\n",
 			ret);
@@ -509,7 +421,7 @@ void mtk_fbdev_fini(struct drm_device *dev)
 	struct mtk_drm_private *priv = dev->dev_private;
 	struct drm_fb_helper *helper = &priv->fb_helper;
 
-	drm_fb_helper_unregister_fbi(helper);
+	drm_fb_helper_unregister_info(helper);
 
 	if (helper->fb) {
 		drm_framebuffer_unregister_private(helper->fb);

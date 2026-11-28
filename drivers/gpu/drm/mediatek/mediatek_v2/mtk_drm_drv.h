@@ -182,6 +182,8 @@ struct tag_chipid {
 	u32 sw_ver;
 };
 
+struct drm_gem_object;
+
 struct mtk_drm_private {
 	struct drm_device *drm;
 	struct device *dma_dev;
@@ -256,6 +258,10 @@ struct mtk_drm_private {
 	struct drm_property *crtc_property[MAX_CRTC][CRTC_PROP_MAX];
 	struct drm_property *connector_property[MAX_CONNECTOR][CONNECTOR_PROP_MAX];
 	struct mtk_ddp_fb_info fb_info;
+
+	/* fbdev emulation; used by mtk_drm_fbdev.c when CONFIG_DRM_FBDEV_EMULATION */
+	struct drm_fb_helper fb_helper;
+	struct drm_gem_object *fbdev_bo;
 
 	struct list_head lyeblob_head;
 	struct mutex lyeblob_list_mutex;
@@ -352,6 +358,13 @@ struct disp_iommu_device {
 	unsigned int inited;
 };
 
+/*
+ * Shared with mtk_drm_fbdev.h, which is included by mtk_drm_fbdev.c together
+ * with this header.  Guard the body so both headers can be used in one
+ * translation unit.
+ */
+#ifndef MTK_TAG_VIDEOLFB_DEFINED
+#define MTK_TAG_VIDEOLFB_DEFINED
 struct tag_videolfb {
 	u64 fb_base;
 	u32 islcmfound;
@@ -359,6 +372,7 @@ struct tag_videolfb {
 	u32 vram;
 	char lcmname[1]; /* this is the minimum size */
 };
+#endif
 
 struct mtk_drm_disp_sec_cb {
 	int (*cb)(int value, struct cmdq_pkt *handle, resource_size_t dummy_larb,
